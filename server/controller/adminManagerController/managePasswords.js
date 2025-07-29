@@ -32,14 +32,14 @@ const resetPassword = async(req , res)=>{
     }   
 }
 
-const resetAllManagerPasswords = async(req, res) => {
+const resetAllPasswords = async(req, res) => {
     try{
         const {password} = req.body;
         if(!password){
             return res.status(400).json({msg: 'Please provide new password for all users'});
         }
 
-        const users = await User.find({role: 'manager'}); // Assuming you want to reset passwords for all managers
+        const users = await User.find({});
         if(users.length === 0) {
             return res.status(404).json({msg: 'No users found'});
         }
@@ -71,5 +71,5 @@ const resetAllManagerPasswords = async(req, res) => {
 
 export {
     resetPassword,
-    resetAllManagerPasswords,
+    resetAllPasswords,
 }
