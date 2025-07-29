@@ -4,7 +4,7 @@ const ewasteRecordsSchema = new mongoose.Schema({
     transactionId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'AssetTransaction',
-        required: true,
+        // required: true,
     },
     assetId: {
         type: mongoose.Schema.Types.ObjectId,

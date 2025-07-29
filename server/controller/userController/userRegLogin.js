@@ -74,7 +74,7 @@ const loginHandler = async(req, res)=>{
                 id: user._id,
                 role: 'admin'
             },
-            process.env.ADMIN_JWT_SECRET,
+            process.env.JWT_SECRET,
             {expiresIn: '1h'});
             
             return res.status(200).json({
@@ -90,7 +90,7 @@ const loginHandler = async(req, res)=>{
                     id: user._id,
                     role: 'manager'
                 },
-                process.env.MANAGER_JWT_SECRET,
+                process.env.JWT_SECRET,
                 {expiresIn: '1h'}
             );
             
@@ -119,7 +119,7 @@ const loginHandler = async(req, res)=>{
                     id: user._id,
                     role: 'user'
                 },
-            process.env.USER_JWT_SECRET,
+            process.env.JWT_SECRET,
             {expiresIn: '1h'});
 
             return res.status(200).json({
