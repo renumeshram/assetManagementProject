@@ -6,8 +6,12 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 const requestRouter = express.Router();
 
 
-requestRouter.post('/request', authMiddleware(['user']),raiseRequestHandler);
-requestRouter.post('/pending', authMiddleware(['manager', 'admin']), handlePendingRequest);
-requestRouter.post('/approve', authMiddleware(['manager', 'admin']), approveRequest);
+requestRouter.post('/raise-request', authMiddleware(['user']),raiseRequestHandler);
+requestRouter.get('/pending', authMiddleware(['manager', 'admin']), handlePendingRequest);
+requestRouter.post('/approve/:id', authMiddleware(['manager', 'admin']), approveRequest);
 requestRouter.post('/reject', authMiddleware(['manager', 'admin']), rejectRequest);
 requestRouter.post('/direct', authMiddleware(['manager', 'admin']), directRequest);
+
+export {
+    requestRouter,
+}

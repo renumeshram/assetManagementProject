@@ -6,7 +6,11 @@ import {authMiddleware} from '../middleware/authMiddleware.js';
 
 const transactionRouter = express.Router();
 
-transactionRouter.post('/issue', authMiddleware(['manager', 'admin']), issueAsset);
+transactionRouter.post('/issue/:id', authMiddleware(['manager', 'admin']), issueAsset);
 transactionRouter.post('/return', authMiddleware(['manager', 'admin']), returnAsset);
 // transactionRouter.get('/all', authMiddleware(['user', 'manager', 'admin']), getAllAssets);
 // transactionRouter.get('/:id', authMiddleware(['user', 'manager', 'admin']), getAssetById);
+
+export {
+    transactionRouter
+}
