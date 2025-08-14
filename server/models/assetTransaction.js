@@ -57,10 +57,10 @@ const assetTransactionSchema = new mongoose.Schema({
         type: Date,
         default: null, // Can be null if not returned yet
     },
-    isEwaste: {
-        type: Boolean,
-        default: false, // Indicates if the asset is marked as e-waste
-    },
+    // isEwaste: {
+    //     type: Boolean,
+    //     default: false, // Indicates if the asset is marked as e-waste
+    // },
 }, {timestamps: true});
 
 export default mongoose.model('AssetTransaction', assetTransactionSchema);

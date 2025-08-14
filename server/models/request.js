@@ -16,7 +16,7 @@ const requestSchema = new mongoose.Schema({
         ref: 'Section',
         required: true,
     },  
-    assetCategoryId:{
+    categoryId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'AssetCategory',
         required: true,
@@ -33,7 +33,7 @@ const requestSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'issued', 'rejected'],
+        enum: ['pending', 'approved', 'issued', 'rejected'],
         default: 'pending',
     },
     requestDate: {

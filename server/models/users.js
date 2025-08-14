@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
+        unique: true,
     },
     sapId:{
         type: String,
@@ -42,7 +43,7 @@ const userSchema = new mongoose.Schema({
 userSchema.pre("save", async function(next) {
     try{
         if(this.password && this.isModified('password')){
-            this,this.password = await bcrypt.hash(this.password, 10);
+            this.password = await bcrypt.hash(this.password, 10);
         }
         next();
     } catch(error){
@@ -51,7 +52,7 @@ userSchema.pre("save", async function(next) {
 })
 
 userSchema.methods.checkpw = function(password, cb){
-    bcrypt.compare(password, this,password, (err, result)=>{
+    bcrypt.compare(password, this.password, (err, result)=>{
         return cb(err, result);
     })
 }

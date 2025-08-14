@@ -26,6 +26,10 @@ const assetSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     },
+    isEwaste:{
+        type: Boolean,
+        default: false, // Default value for isEwaste
+    }
 }, {timestamps: true});
 
 export default mongoose.model('Asset', assetSchema);

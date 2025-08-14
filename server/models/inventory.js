@@ -8,22 +8,22 @@ const inventorySchema = new mongoose.Schema({
     },
     totalStock: {
         type: Number,
-        required: true,
+        // required: true,
         default: 0,
     },
     availableStock: {
         type: Number,
-        required: true,
+        // required: true,
         default: 0,
     },
     issuedStock: {
         type: Number,
-        required: true,
+        // required: true,
         default: 0,
     },
     minimumThreshold:{
         type: Number,
-        required: true,
+        // required: true,
         default: 0,
     },
     lastUpdated: {
