@@ -3,15 +3,24 @@ import Inventory from '../../models/inventory.js';
 import Asset from '../../models/asset.js';
 import AssetCategory from '../../models/assetCategory.js';
 import User from '../../models/users.js';
-import Request from '../../models/request.js';
 
 const handlePendingRequest = async (req, res) => {
     try {
         const requests = await Request.find({ status: 'pending' }).populate('assetId requestorId');
-        res.json({
+        if(requests.length === 0) {
+            return res.json({
+                success: true,
+                statusCode: 200,
+                total: 0,
+                requests: [],
+                msg: 'No pending requests found'
+            });
+        }
+        return res.json({
             success: true,
             statusCode: 200,
             msg: 'Pending requests fetched successfully',
+            total: requests.length,
             requests
         })
     } catch (err) {
@@ -26,8 +35,10 @@ const handlePendingRequest = async (req, res) => {
 
 const approveRequest = async (req, res) => {
     try {
+        console.log("Checking params",req.params)
         const requestId = req.params.id;
         const request = await Request.findById(requestId).populate('assetId requestorId');
+        console.log("🚀 ~ approveRequest ~ request:", request)
 
         if (!request) {
             return res.status(404).json({
@@ -45,8 +56,11 @@ const approveRequest = async (req, res) => {
             });
         }
 
+        console.log("🚀 ~ approveRequest ~  request.assetId._id:",  request.assetId._id)
         // Check inventory for available stock
         const inventory = await Inventory.findOne({ assetId: request.assetId._id });
+        console.log("🚀 ~ approveRequest ~ inventory:", inventory)
+        console.log(inventory, request.quantity)
         if (!inventory || inventory.availableStock < request.quantity) {
             return res.status(400).json({
                 success: false,
@@ -134,7 +148,7 @@ const directRequest = async (req, res) => {
 
         const category = await AssetCategory.findOne({ categoryName });
 
-        const asset = await Asset.find({ assetName, assetCategoryId: category._id });
+        const asset = await Asset.findOne({ assetName, categoryId: category._id });
         if (!asset) {
             return res.status(404).json({
                 success: false,
@@ -142,7 +156,9 @@ const directRequest = async (req, res) => {
                 msg: 'Asset not found'
             });
         }
+        console.log("🚀 ~ directRequest ~ asset:", asset)
         const inventory = await Inventory.findOne({ assetId: asset._id });
+        console.log("🚀 ~ directRequest ~ inventory:", inventory)
         if (!inventory || inventory.availableStock < quantity) {
             return res.status(400).json({
                 success: false,

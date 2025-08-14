@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import User from '../../models/users.js';
+import Department from '../../models/department.js';
+import Section from '../../models/section.js';
 
 dotenv.config();
 
@@ -20,8 +22,8 @@ const registerHandler =async(req, res)=>{
             });
         }
         
-        const departmentFound = await department.findOne({deptName: department});
-        const sectionFound = await section.findOne({sectionName: section});
+        const departmentFound = await Department.findOne({deptName: department});
+        const sectionFound = await Section.findOne({sectionName: section});
         if(!departmentFound || !sectionFound){  
             return res.status(400).json({
                 success: false,
@@ -77,6 +79,8 @@ const loginHandler = async(req, res)=>{
             process.env.JWT_SECRET,
             {expiresIn: '1h'});
             
+            console.log('Admin login successful');
+            
             return res.status(200).json({
                 success: true,
                 msg: 'Admin login successful', token,
@@ -101,32 +105,30 @@ const loginHandler = async(req, res)=>{
                 statusCode: 200,
             });
         }
-        else{
-            user.checkpw(password, async(err, result)=>{
-                if(err) return next(err);
-                if(!result){
+        else {
+            user.checkpw(password, async (err, result) => {
+                if (err) return next(err);
+                if (!result) {
                     return res.status(400).json({
                         success: false,
                         statusCode: 400,
                         msg: 'Invalid Password'
-                    })
+                    });
                 }
-            })
-            req.session.userId = user._id; 
-            console.log("🚀 ~ loginHandler ~ req.session.userId:", req.session.userId)
+                req.session.userId = user._id;
+                console.log("🚀 ~ loginHandler ~ req.session.userId:", req.session.userId);
 
-            const token = jwt.sign({
+                const token = jwt.sign({
                     id: user._id,
                     role: 'user'
-                },
-            process.env.JWT_SECRET,
-            {expiresIn: '1h'});
+                }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-            return res.status(200).json({
-                success: true,
-                msg: 'User login successful', token,
-                sapId: sapId,
-                statusCode: 200,
+                return res.status(200).json({
+                    success: true,
+                    msg: 'User login successful', token,
+                    sapId: sapId,
+                    statusCode: 200,
+                });
             });
         }
         

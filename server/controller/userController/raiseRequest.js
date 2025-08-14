@@ -11,15 +11,24 @@ const raiseRequestHandler = async (req , res)=>{
     
         const requestorId = req.user.id; // Assuming the user ID is stored in req.user.id after authentication from token
 
-        const [assetDetails, categoryDetails, deptDetails, sectionDetails] = await Promise.all([
-            Asset.findOne({assetName: asset}),
-            AssetCategory.findOne({categoryName: category}),    
-            Department.findOne({departmentName: department}),
-            Section.findOne({sectionName: section}),
+
+        const [categoryDetails, departmentDetails] = await Promise.all([
+            AssetCategory.findOne({categoryName: category}),
+            Department.findOne({deptName: department}),
         ]);
 
-        if(!assetDetails || !categoryDetails || !deptDetails || !sectionDetails) {
-            return res.status(404).json({msg: 'Asset or category or section or department not found'});
+        if(!categoryDetails || !departmentDetails){
+            return res.status(404).json({msg: 'Asset category or department not found'});
+        }
+
+
+        const [assetDetails, sectionDetails] = await Promise.all([
+            Asset.findOne({assetName: asset}, {categoryId: categoryDetails._id}),
+            Section.findOne({sectionName: section}, {departmentId: departmentDetails._id}),
+        ]);
+
+        if(!assetDetails || !sectionDetails) {
+            return res.status(404).json({msg: 'Asset or section not found'});
         }
         if(quantity <= 0) {
             return res.status(400).json({msg: 'Quantity must be greater than zero'});
@@ -27,9 +36,9 @@ const raiseRequestHandler = async (req , res)=>{
 
         const request = await Request.create({
             requestorId,
-            departmentId: deptDetails._id,
+            departmentId: departmentDetails._id,
             sectionId: sectionDetails._id,
-            assetCategoryId: categoryDetails._id,
+            categoryId: categoryDetails._id,
             assetId: assetDetails._id,
             quantity,
             requestDate,

@@ -6,11 +6,13 @@ import Department from '../../models/department.js';
 import Section from '../../models/section.js';
 import Inventory from '../../models/inventory.js';
 import EwasteRecords from '../../models/ewasteRecords.js';
+import Request from '../../models/request.js';
 
 const issueAsset = async(req, res) =>{
     try{
-        const { requestId} = req.body;
-        const request = await Request.findById(requestId).populate('assetId').populate('assetCategoryId');
+        
+        const requestId = req.params.id;
+        const request = await Request.findById(requestId).populate('assetId').populate('categoryId');
 
         if(!request || request.status !== 'approved') {
             return res.status(404).json({
@@ -31,7 +33,7 @@ const issueAsset = async(req, res) =>{
 
         const transaction = new AssetTransaction({
             assetId: request.assetId._id,
-            categoryId: request.assetCategoryId._id,
+            categoryId: request.categoryId._id,
             issuedTo: request.requestorId, 
             issuedBy: req.user.id, // Assuming the user ID is stored in req.user.id after authentication
             transactionType: 'issue',
@@ -63,11 +65,26 @@ const issueAsset = async(req, res) =>{
         await request.save();
         console.log("🚀 ~ issueAsset ~ request updated:", request);
 
+        //Update the ewaste status to generated and add further attributes PENDING
+        if(request.assetId.isEwaste){
+            
+            const ewasteRecord = await EwasteRecords.create({
+                transactionId: transaction.id,
+                assetId: request.assetId._id,
+                quantity: request.quantity,
+                totalWeight: parseInt(request.assetId.unitWeight, 10) * parseInt(request.quantity, 10),
+                receiveDate: new Date(),
+                status: 'generated', // Set the initial status to 'generated'
+            })
+            console.log("🚀 ~ issueAsset ~ ewasteRecord created:", ewasteRecord);
+        }
+
         return res.status(200).json({
             success: true,
             statusCode: 200,
             msg: 'Asset issued successfully',
             transactionId: transaction._id,
+            
         });
 
     }catch(err){
@@ -88,11 +105,13 @@ const returnAsset = async(req, res) =>{
 
         const [categoryDetails, departmentDetails] = await Promise.all([
             AssetCategory.findOne({categoryName: category}),
-            Department.findOne({departmentName: department}),
+            Department.findOne({deptName: department}),
         ]);
+        console.log("🚀 ~ returnAsset ~ categoryDetails:", categoryDetails)
+        console.log("🚀 ~ returnAsset ~ departmentDetails:", departmentDetails)
 
         const [assetDetails, sectionDetails] = await Promise.all([
-            Asset.findOne({assetName: asset, assetCategoryId: categoryDetails._id}),
+            Asset.findOne({assetName: asset, categoryId: categoryDetails._id}),
             Section.findOne({sectionName: section, departmentId: departmentDetails._id}),
         ]);
 
@@ -142,6 +161,7 @@ const returnAsset = async(req, res) =>{
                 quantity,
                 totalWeight: parseInt(assetDetails.unitWeight, 10) * parseInt(quantity, 10), 
                 receiveDate: returnDate,
+                status: 'collected', // Set the status to 'collected' for e-waste
             });
 
             await ewaste.save();
