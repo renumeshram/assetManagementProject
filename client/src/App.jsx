@@ -1,23 +1,33 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import LoginForm from './components/auth/LoginForm';
 import AppLayout from './components/layout/AppLayout';
-import { useAuth } from './hooks/useAuth';
-
-const AppContent = () => {
-  const { user } = useAuth();
-  
-  if (!user) {
-    return <LoginForm />;
-  }
-  
-  return <AppLayout />;
-};
+import ProtectedRoute from './routes/ProtectedRoute';
+import RegisterForm from './components/auth/RegisterForm';
+import { Toaster } from 'react-hot-toast';
 
 const App = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <Toaster position="top-right" reverseOrder={false} />
+      <BrowserRouter>
+        <Routes>
+          {/* Public route */}
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/register" element={<RegisterForm />} />
+
+          {/* Protected routes */}
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 };
