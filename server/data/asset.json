@@ -1,0 +1,103 @@
+{
+  "categories": [
+    {
+      "categoryName": "Cartridges",
+      "assets": [
+        {
+          "assetName": "HP 803 Black Ink",
+          "make": "HP",
+          "model": "803 Black",
+          "unitWeight": 0.1,
+          "isEwaste": true
+        },
+        {
+          "assetName": "HP 803 Tri-Color Ink",
+          "make": "HP",
+          "model": "803 Tri",
+          "unitWeight": 0.1,
+          "isEwaste": true
+        },
+        {
+          "assetName": "Canon PG-245 Black Ink",
+          "make": "Canon",
+          "model": "PG-245",
+          "unitWeight": 0.1,
+          "isEwaste": true
+        },
+        {
+          "assetName": "Epson 664 Cyan Ink",
+          "make": "Epson",
+          "model": "664 Cyan",
+          "unitWeight": 0.1,
+          "isEwaste": true
+        },
+        {
+          "assetName": "Epson 664 Magenta Ink",
+          "make": "Epson",
+          "model": "664 Magenta",
+          "unitWeight": 0.1,
+          "isEwaste": true
+        },
+        {
+          "assetName": "Epson 664 Yellow Ink",
+          "make": "Epson",
+          "model": "664 Yellow",
+          "unitWeight": 0.1,
+          "isEwaste": true
+        }
+      ]
+    },
+    {
+      "categoryName": "Pendrive",
+      "assets": [
+        {
+          "assetName": "SanDisk 32GB",
+          "make": "SanDisk",
+          "model": "32GB",
+          "unitWeight": 0.05,
+          "isEwaste": true
+        },
+        {
+          "assetName": "HP 64GB",
+          "make": "HP",
+          "model": "64GB",
+          "unitWeight": 0.05,
+          "isEwaste": true
+        },
+        {
+          "assetName": "Kingston 128GB",
+          "make": "Kingston",
+          "model": "128GB",
+          "unitWeight": 0.05,
+          "isEwaste": true
+        }
+      ]
+    },
+    {
+      "categoryName": "Printer",
+      "assets": [
+        {
+          "assetName": "HP LaserJet 1020",
+          "make": "HP",
+          "model": "LaserJet 1020",
+          "unitWeight": 7.5,
+          "isEwaste": false
+        },
+        {
+          "assetName": "Canon G3010",
+          "make": "Canon",
+          "model": "G3010",
+          "unitWeight": 6.5,
+          "isEwaste": false
+        },
+        {
+          "assetName": "Epson L3150",
+          "make": "Epson",
+          "model": "L3150",
+          "unitWeight": 5.8,
+          "isEwaste": false
+        }
+      ]
+    }
+  ]
+}

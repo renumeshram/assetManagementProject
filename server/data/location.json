@@ -1,0 +1,556 @@
+{
+  "locations": [
+    {
+      "id": 1,
+      "name": "Kirandul",
+      "departments": [
+        {
+          "id": 101,
+          "name": "AUTO SHOP",
+          "sections": [
+            "AUTO SHOP"
+          ]
+        },
+        {
+          "id": 102,
+          "name": "BLASTING",
+          "sections": [
+            "BLASTING"
+          ]
+        },
+        {
+          "id": 103,
+          "name": "C&IT",
+          "sections": [
+            "C&IT"
+          ]
+        },
+        {
+          "id": 104,
+          "name": "CGM'S SECTT",
+          "sections": [
+            "CGM'S SECTT"
+          ]
+        },
+        {
+          "id": 105,
+          "name": "CHEMICAL LAB",
+          "sections": [
+            "CHEMICAL LAB"
+          ]
+        },
+        {
+          "id": 106,
+          "name": "CIVIL TOWNSHIP",
+          "sections": [
+            "CIVIL TOWNSHIP"
+          ]
+        },
+        {
+          "id": 107,
+          "name": "CONTRACT",
+          "sections": [
+            "CONTRACT"
+          ]
+        },
+        {
+          "id": 108,
+          "name": "CP (E) 11B",
+          "sections": [
+            "CP (E) 11B"
+          ]
+        },
+        {
+          "id": 109,
+          "name": "CP (E) 11C",
+          "sections": [
+            "CP (E) 11C"
+          ]
+        },
+        {
+          "id": 110,
+          "name": "CP (MECH) 11B",
+          "sections": [
+            "CP (MECH) 11B"
+          ]
+        },
+        {
+          "id": 111,
+          "name": "CP (MECH) 11B ",
+          "sections": [
+            "CP (MECH) 11B "
+          ]
+        },
+        {
+          "id": 112,
+          "name": "CP (MECH) 11C",
+          "sections": [
+            "CP (MECH) 11C"
+          ]
+        },
+        {
+          "id": 113,
+          "name": "CP (MECH) 14",
+          "sections": [
+            "CP (MECH) 14"
+          ]
+        },
+        {
+          "id": 114,
+          "name": "CP (MECH) 14 ",
+          "sections": [
+            "CP (MECH) 14 "
+          ]
+        },
+        {
+          "id": 115,
+          "name": "CP&DH (E) 11B",
+          "sections": [
+            "CP&DH (E) 11B"
+          ]
+        },
+        {
+          "id": 116,
+          "name": "CP&DH (E) 14",
+          "sections": [
+            "CP&DH (E) 14"
+          ]
+        },
+        {
+          "id": 117,
+          "name": "CSD, HILLTOP",
+          "sections": [
+            "CSD, HILLTOP"
+          ]
+        },
+        {
+          "id": 118,
+          "name": "CSD, KDL",
+          "sections": [
+            "CSD, KDL"
+          ]
+        },
+        {
+          "id": 119,
+          "name": "CSR",
+          "sections": [
+            "CSR"
+          ]
+        },
+        {
+          "id": 120,
+          "name": "DH (E) 11C",
+          "sections": [
+            "DH (E) 11C"
+          ]
+        },
+        {
+          "id": 121,
+          "name": "DH (MECH) 11C",
+          "sections": [
+            "DH (MECH) 11C"
+          ]
+        },
+        {
+          "id": 122,
+          "name": "DH (MECH) 14",
+          "sections": [
+            "DH (MECH) 14"
+          ]
+        },
+        {
+          "id": 123,
+          "name": "ELECT SER TOWNSHIP",
+          "sections": [
+            "ELECT SER TOWNSHIP"
+          ]
+        },
+        {
+          "id": 124,
+          "name": "ELECTRICAL OFFICE",
+          "sections": [
+            "ELECTRICAL OFFICE"
+          ]
+        },
+        {
+          "id": 125,
+          "name": "ERS 14",
+          "sections": [
+            "ERS 14"
+          ]
+        },
+        {
+          "id": 126,
+          "name": "EXCAV/DOZER 11C",
+          "sections": [
+            "EXCAV/DOZER 11C"
+          ]
+        },
+        {
+          "id": 127,
+          "name": "EXCAV/DOZER 14",
+          "sections": [
+            "EXCAV/DOZER 14"
+          ]
+        },
+        {
+          "id": 128,
+          "name": "EXCAV/DRILL 11C",
+          "sections": [
+            "EXCAV/DRILL 11C"
+          ]
+        },
+        {
+          "id": 129,
+          "name": "EXCAV/DRILL 14",
+          "sections": [
+            "EXCAV/DRILL 14"
+          ]
+        },
+        {
+          "id": 130,
+          "name": "EXCAV/DRIVER 11C",
+          "sections": [
+            "EXCAV/DRIVER 11C"
+          ]
+        },
+        {
+          "id": 131,
+          "name": "EXCAV/DRIVER 14",
+          "sections": [
+            "EXCAV/DRIVER 14"
+          ]
+        },
+        {
+          "id": 132,
+          "name": "EXCAV/FA/TCO/MA 14",
+          "sections": [
+            "EXCAV/FA/TCO/MA 14"
+          ]
+        },
+        {
+          "id": 133,
+          "name": "EXCAV/SHOVEL 11C",
+          "sections": [
+            "EXCAV/SHOVEL 11C"
+          ]
+        },
+        {
+          "id": 134,
+          "name": "EXCAV/SHOVEL 14",
+          "sections": [
+            "EXCAV/SHOVEL 14"
+          ]
+        },
+        {
+          "id": 135,
+          "name": "EXCAV/TCO/MA/FA 11C",
+          "sections": [
+            "EXCAV/TCO/MA/FA 11C"
+          ]
+        },
+        {
+          "id": 136,
+          "name": "FES 11B",
+          "sections": [
+            "FES 11B"
+          ]
+        },
+        {
+          "id": 137,
+          "name": "FES 11C",
+          "sections": [
+            "FES 11C"
+          ]
+        },
+        {
+          "id": 138,
+          "name": "FES 14",
+          "sections": [
+            "FES 14"
+          ]
+        },
+        {
+          "id": 139,
+          "name": "FES 14 town",
+          "sections": [
+            "FES 14 town"
+          ]
+        },
+        {
+          "id": 140,
+          "name": "FINANCE",
+          "sections": [
+            "SALES",
+            "MISC",
+            "CASH",
+            "ESTABLISHMENT"
+          ]
+        },
+        {
+          "id": 141,
+          "name": "FRS (FIELD REPAIR SHOP)",
+          "sections": [
+            "FRS (FIELD REPAIR SHOP)"
+          ]
+        },
+        {
+          "id": 142,
+          "name": "FRS 11B",
+          "sections": [
+            "FRS 11B"
+          ]
+        },
+        {
+          "id": 143,
+          "name": "FRS 11C",
+          "sections": [
+            "FRS 11C"
+          ]
+        },
+        {
+          "id": 144,
+          "name": "GEO&QC,KDL",
+          "sections": [
+            "GEO&QC,KDL"
+          ]
+        },
+        {
+          "id": 145,
+          "name": "GEOLOGY 11C",
+          "sections": [
+            "GEOLOGY 11C"
+          ]
+        },
+        {
+          "id": 146,
+          "name": "HAULAGE 11C",
+          "sections": [
+            "HAULAGE 11C"
+          ]
+        },
+        {
+          "id": 147,
+          "name": "HAULAGE 14",
+          "sections": [
+            "HAULAGE 14"
+          ]
+        },
+        {
+          "id": 148,
+          "name": "HEM",
+          "sections": [
+            "HEM"
+          ]
+        },
+        {
+          "id": 149,
+          "name": "HOSPITAL",
+          "sections": [
+            "HOSPITAL"
+          ]
+        },
+        {
+          "id": 150,
+          "name": "HR",
+          "sections": [
+            "ESTABLISHMENT",
+            "ADMIN",
+            "ESTATE",
+            "PENSION",
+            "SCHOOL"
+          ]
+        },
+        {
+          "id": 151,
+          "name": "HRS-14",
+          "sections": [
+            "HRS-14"
+          ]
+        },
+        {
+          "id": 152,
+          "name": "IE",
+          "sections": [
+            "IE"
+          ]
+        },
+        {
+          "id": 153,
+          "name": "LP (E) ",
+          "sections": [
+            "LP (E) "
+          ]
+        },
+        {
+          "id": 154,
+          "name": "LP (MECH)",
+          "sections": [
+            "LP (MECH)"
+          ]
+        },
+        {
+          "id": 155,
+          "name": "M&S",
+          "sections": [
+            "M&S"
+          ]
+        },
+        {
+          "id": 156,
+          "name": "MACHINE SHOP",
+          "sections": [
+            "MACHINE SHOP"
+          ]
+        },
+        {
+          "id": 157,
+          "name": "MATERIALS MANAGEMENT",
+          "sections": [
+            "MATERIALS MANAGEMENT"
+          ]
+        },
+        {
+          "id": 158,
+          "name": "MECH. OFFICE 11C",
+          "sections": [
+            "MECH. OFFICE 11C"
+          ]
+        },
+        {
+          "id": 159,
+          "name": "MINES 11B",
+          "sections": [
+            "MINES 11B"
+          ]
+        },
+        {
+          "id": 160,
+          "name": "MINING OFFICE 11C",
+          "sections": [
+            "MINING OFFICE 11C"
+          ]
+        },
+        {
+          "id": 161,
+          "name": "PLANT OFFICE",
+          "sections": [
+            "PLANT OFFICE"
+          ]
+        },
+        {
+          "id": 162,
+          "name": "PRODUCTION",
+          "sections": [
+            "PRODUCTION"
+          ]
+        },
+        {
+          "id": 163,
+          "name": "SERVICE CENTER 11C",
+          "sections": [
+            "SERVICE CENTER 11C"
+          ]
+        },
+        {
+          "id": 164,
+          "name": "SP III",
+          "sections": [
+            "SP III"
+          ]
+        },
+        {
+          "id": 165,
+          "name": "SP-I (E) ",
+          "sections": [
+            "SP-I (E) "
+          ]
+        },
+        {
+          "id": 166,
+          "name": "SP-I (MECH)",
+          "sections": [
+            "SP-I (MECH)"
+          ]
+        },
+        {
+          "id": 167,
+          "name": "SP-II (E) ",
+          "sections": [
+            "SP-II (E) "
+          ]
+        },
+        {
+          "id": 168,
+          "name": "SP-II (MECH)",
+          "sections": [
+            "SP-II (MECH)"
+          ]
+        },
+        {
+          "id": 169,
+          "name": "SURVEY 14",
+          "sections": [
+            "SURVEY 14"
+          ]
+        },
+        {
+          "id": 170,
+          "name": "T&SE",
+          "sections": [
+            "T&SE"
+          ]
+        },
+        {
+          "id": 171,
+          "name": "TELEPHONE SERVICES",
+          "sections": [
+            "TELEPHONE SERVICES"
+          ]
+        },
+        {
+          "id": 172,
+          "name": "TIME OFFICE 11C",
+          "sections": [
+            "TIME OFFICE 11C"
+          ]
+        },
+        {
+          "id": 173,
+          "name": "TIME OFFICE 14",
+          "sections": [
+            "TIME OFFICE 14"
+          ]
+        },
+        {
+          "id": 174,
+          "name": "TRANSPORT (BUS)",
+          "sections": [
+            "TRANSPORT (BUS)"
+          ]
+        },
+        {
+          "id": 175,
+          "name": "VIGILIANCE",
+          "sections": [
+            "VIGILIANCE"
+          ]
+        },
+        {
+          "id": 176,
+          "name": "WATER SUPPLY/ CIVIL OFFICE",
+          "sections": [
+            "WATER SUPPLY/ CIVIL OFFICE"
+          ]
+        },
+        {
+          "id": 177,
+          "name": "WORKS",
+          "sections": [
+            "WORKS"
+          ]
+        }
+      ]
+    }
+  ]
+}
