@@ -26,8 +26,11 @@ export const getMenuItems = (role) => {
       { icon: Users, label: 'Users', view: 'users' },
       { icon: FileText, label: 'All Requests', view: 'requests' },
       { icon: Package, label: 'Transactions', view: 'transactions' },
+      { icon: Plus, label: 'Direct Request', view: 'direct-request' },
       { icon: Settings, label: 'Inventory', view: 'inventory' },
-      { icon: FileText, label: 'Reports', view: 'reports' }
+      { icon: Plus, label: 'Add Asset', view: 'add-asset' },
+      { icon: FileText, label: 'Reports', view: 'reports' },
+      { icon: Plus, label: 'Create Inventory', view: 'create-inventory' }
     ]
   };
   

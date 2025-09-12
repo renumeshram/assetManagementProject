@@ -18,13 +18,13 @@ export const mockSections = [
 
 export const mockCategories = [
   { id: '1', name: 'Laptops' },
-  { id: '2', name: 'Mobile Phones' },
+  { id: '2', name: 'Cartridges' },
   { id: '3', name: 'Monitors' }
 ];
 
 export const mockAssets = [
   { id: '1', name: 'Dell Laptop XPS 13', categoryId: '1', make: 'Dell', model: 'XPS 13' },
-  { id: '2', name: 'iPhone 14', categoryId: '2', make: 'Apple', model: 'iPhone 14' },
+  { id: '2', name: 'Black Cartridge', categoryId: '2', make: 'Epson', model: 'iPhone 14' },
   { id: '3', name: 'Samsung Monitor', categoryId: '3', make: 'Samsung', model: '27" 4K' }
 ];
 
@@ -49,7 +49,7 @@ export const mockRequests = [
     categoryName: 'Mobile Phones',
     assetName: 'iPhone 14',
     quantity: 2,
-    status: 'approved',
+    status: 'issued',
     requestDate: '2024-01-14',
     comments: 'For new employees'
   }
