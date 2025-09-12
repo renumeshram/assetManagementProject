@@ -14,7 +14,7 @@ const raiseRequestHandler = async (req , res)=>{
 
         const [categoryDetails, departmentDetails] = await Promise.all([
             AssetCategory.findOne({categoryName: category}),
-            Department.findOne({deptName: department}),
+            Department.findOne({name: department}),
         ]);
 
         if(!categoryDetails || !departmentDetails){
@@ -24,7 +24,7 @@ const raiseRequestHandler = async (req , res)=>{
 
         const [assetDetails, sectionDetails] = await Promise.all([
             Asset.findOne({assetName: asset}, {categoryId: categoryDetails._id}),
-            Section.findOne({sectionName: section}, {departmentId: departmentDetails._id}),
+            Section.findOne({name: section}, {departmentId: departmentDetails._id}),
         ]);
 
         if(!assetDetails || !sectionDetails) {
