@@ -15,6 +15,9 @@ import { createAsset, createAssetCategory, createDepartment, createSection, upda
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { requestRouter } from './routes/requests.js';
 import { transactionRouter } from './routes/transactions.js';
+import generalRouter from './routes/general.js';
+import { inventoryRouter } from './routes/inventory.js';
+import { ewasteRouter } from './routes/ewaste.js';
 
 
 const app = express();
@@ -50,6 +53,9 @@ app.post("/api/update-inventory",authMiddleware(['admin']), updateInventory);
 app.use('/api/auth', authRouter);
 app.use('/api/request', requestRouter)
 app.use('/api/transaction', transactionRouter)
+app.use('/api/general', generalRouter),
+app.use('/api/inventory', inventoryRouter)
+app.use('/api/ewaste', ewasteRouter)
 
 mongoose.connect(process.env.MONGO_URL).then(() =>{
     console.log("Connected to MongoDB");
