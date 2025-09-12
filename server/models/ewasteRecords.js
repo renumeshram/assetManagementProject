@@ -33,4 +33,7 @@ const ewasteRecordsSchema = new mongoose.Schema({
 
 }, {timestamps: true});
 
-export default mongoose.model('EwasteRecords', ewasteRecordsSchema);
+// Fix: Check if model already exists before creating it
+const EwasteRecords = mongoose.models.EwasteRecords || mongoose.model('EwasteRecords', ewasteRecordsSchema);
+
+export default EwasteRecords;

@@ -1,14 +1,23 @@
-import mongoose from 'mongoose';
+// Department.js
+import mongoose from "mongoose";
 
 const departmentSchema = new mongoose.Schema({
-    deptName: {
-        type: String,
-        required: true, 
-    },
-    isActive: {
-        type: Boolean,
-        default: true,      
-    },
-}, {timestamps: true});
+  name: {
+    type: String,
+    required: true,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  locationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Location',
+    required: true,
+  },
+}, { timestamps: true });
 
-export default mongoose.model('Department', departmentSchema);
+// Use try-catch to debug
+const Department = mongoose.models.Department || mongoose.model('Department', departmentSchema);
+
+export default Department;

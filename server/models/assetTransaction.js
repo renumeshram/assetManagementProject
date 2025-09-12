@@ -22,7 +22,8 @@ const assetTransactionSchema = new mongoose.Schema({
         required: true,
     },
     issuedTo: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         // required: true,
     },
     issuedBy: {

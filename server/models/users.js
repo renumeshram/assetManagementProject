@@ -16,6 +16,11 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    locationId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ProjectLocation',
+        // required: true,
+    },
     departmentId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Department',
@@ -38,7 +43,7 @@ const userSchema = new mongoose.Schema({
         select: false, // Do not return password in queries
     },
 
-}, {timestamp: true});
+}, {timestamps: true});
 
 userSchema.pre("save", async function(next) {
     try{

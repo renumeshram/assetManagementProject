@@ -33,7 +33,7 @@ const requestSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'approved', 'issued', 'rejected'],
+        enum: ['pending', 'issued', 'rejected'],
         default: 'pending',
     },
     requestDate: {
@@ -47,8 +47,13 @@ const requestSchema = new mongoose.Schema({
     reviewDate:{
         type: Date,
     },
+    rejectionReason:{
+        type: String,
+        trim: true,
+    },
     comments: {
         type: String,
+        trim: true,
     },
     isDirectRequest: {
         type: Boolean,
