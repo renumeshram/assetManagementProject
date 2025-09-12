@@ -21,6 +21,18 @@ const authMiddleware = (roles = []) => async(req, res, next) =>{
         next();
     }catch(err){
         console.error("Auth Middleware Error:", err);
+
+        //handle specific JWT errors
+        if(err.name === "TokenExpiredError"){
+            return res.status(401).json({
+                msg: "Session expired. Please log in again."
+            })
+        }
+        if(err.name === "JsonWebTokenError"){
+            return res.status(401).json({
+                msg: "Invalid token."
+            })
+        }
         return res.status(500).json({msg: 'Internal server error'});
     }
 }
