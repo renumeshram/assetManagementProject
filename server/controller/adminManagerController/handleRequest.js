@@ -33,62 +33,6 @@ const handlePendingRequest = async (req, res) => {
     }
 }
 
-const approveRequest = async (req, res) => {
-    try {
-        console.log("Checking params",req.params)
-        const requestId = req.params.id;
-        const request = await Request.findById(requestId).populate('assetId requestorId');
-        console.log("🚀 ~ approveRequest ~ request:", request)
-
-        if (!request) {
-            return res.status(404).json({
-                success: false,
-                statusCode: 404,
-                msg: 'Request not found'
-            });
-        }
-
-        if (request.status !== 'pending') {
-            return res.status(400).json({
-                success: false,
-                statusCode: 400,
-                msg: 'Request is not in pending state'
-            });
-        }
-
-        console.log("🚀 ~ approveRequest ~  request.assetId._id:",  request.assetId._id)
-        // Check inventory for available stock
-        const inventory = await Inventory.findOne({ assetId: request.assetId._id });
-        console.log("🚀 ~ approveRequest ~ inventory:", inventory)
-        console.log(inventory, request.quantity)
-        if (!inventory || inventory.availableStock < request.quantity) {
-            return res.status(400).json({
-                success: false,
-                statusCode: 400,
-                msg: 'Insufficient stock available for the requested asset'
-            });
-        }
-
-        // Update request status to approved
-        request.status = 'approved';
-        request.reviewedBy = req.user.id; // Assuming the user ID is stored in req.user.id after authentication
-        request.reviewDate = new Date();
-        await request.save();
-        res.json({
-            success: true,
-            statusCode: 200,
-            msg: 'Request approved successfully',
-            request
-        });
-    } catch (err) {
-        console.error("Error approving request:", err);
-        res.status(500).json({
-            success: false,
-            statusCode: 500,
-            msg: 'Internal server error'
-        });
-    }
-}
 
 const rejectRequest = async (req, res) => {
     try {
@@ -146,7 +90,28 @@ const directRequest = async (req, res) => {
             });
         }
 
+        // Check if user has required department and section information
+        if (!requestor.sectionId || !requestor.departmentId) {
+            return res.status(400).json({
+                success: false,
+                statusCode: 400,
+                msg: 'User profile incomplete - missing department or section information',
+                details: {
+                    sapId,
+                    hasSection: !!requestor.sectionId,
+                    hasDepartment: !!requestor.departmentId
+                }
+            });
+        }
+
         const category = await AssetCategory.findOne({ categoryName });
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                statusCode: 404,
+                msg: 'Asset category not found'
+            });
+        }
 
         const asset = await Asset.findOne({ assetName, categoryId: category._id });
         if (!asset) {
@@ -171,13 +136,11 @@ const directRequest = async (req, res) => {
             assetId: asset._id,
             categoryId: category._id,
             quantity,
-            status: 'approved', // Direct request is considered approved
+            status: 'pending', // Direct request starts as pending, ready for immediate issue
             sectionId: requestor.sectionId._id,
             departmentId: requestor.departmentId._id,
             requestDate: new Date(),
             isDirectRequest: true,// Mark as direct request
-            reviewedBy: req.user.id, // Assuming the user ID is stored in req.user.id after authentication
-            reviewDate: new Date(),
         });
         await request.save();
         console.log("🚀 ~ directRequest ~ request:", request)
@@ -199,10 +162,39 @@ const directRequest = async (req, res) => {
     }
 }
 
+const getAllRequests = async (req, res) => {
+    try{
+        const requests = await Request.find().populate('assetId requestorId categoryId departmentId sectionId reviewedBy').sort({ createdAt: -1 });
+        if(requests.length === 0){
+            return res.json({
+                success: true,
+                statusCode: 200,
+                total: 0,
+                requests: [],
+                msg: 'No requests found'
+            });
+        }
+        return res.json({
+            success: true,
+            statusCode: 200,
+            msg: 'All requests fetched successfully',
+            total: requests.length,
+            requests
+        })
+
+    }catch(err){
+        console.error("Error fetching all requests:", err);
+        res.status(500).json({
+            success: false,
+            statusCode: 500,
+            msg: 'Internal server error'
+        });
+    }
+}
 
 export{
     handlePendingRequest,
-    approveRequest,
     rejectRequest,
     directRequest,
+    getAllRequests,
 }

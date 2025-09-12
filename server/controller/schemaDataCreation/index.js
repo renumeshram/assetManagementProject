@@ -3,15 +3,16 @@ import Section from '../../models/section.js';
 import AssetCategory from '../../models/assetCategory.js'
 import Asset from '../../models/asset.js'
 import Inventory from '../../models/inventory.js'
+import ProjectLocation from '../../models/projectLocation.js'
 
 const createDepartment = async (req , res) =>{
     try{
         const { deptName } = req.body;
-        const existingDepartment = await Department.findOne({ deptName });
+        const existingDepartment = await Department.findOne({ name: deptName });
         if (existingDepartment) {   
             return res.status(400).json({ message: 'Department already exists' });
         }
-        const newDepartment = new Department({ deptName });
+        const newDepartment = new Department({ name: deptName });
         await newDepartment.save();
         return res.status(201).json({ message: 'Department created successfully', department: newDepartment });
     }catch(err){
@@ -23,16 +24,16 @@ const createDepartment = async (req , res) =>{
 const createSection = async (req, res) => {
     try{
         const { sectionName, deptName} = req.body;
-        const existingSection = await Section.findOne({ sectionName});
+        const existingSection = await Section.findOne({ name: sectionName});
         if (existingSection) {
             return res.status(400).json({ message: 'Section already exists in this department' });
         }
-        const dept = await Department.findOne({ deptName });
+        const dept = await Department.findOne({ name: deptName });
         if (!dept) {
             return res.status(404).json({ message: 'Department not found' });
         }
         const newSection = new Section({
-            sectionName,
+            sectioname,
             departmentId: dept._id // Store the department ID
         });
         await newSection.save();
@@ -77,9 +78,9 @@ const createAssetCategory = async(req , res)=>{
 const createAsset = async(req , res)=>{
     try{
 
-        const {assetName, categoryName, make, model, unitWeight, isEwaste} = req.body
+        const {assetName, categoryName, make, model, unitWeight, isEwaste, description} = req.body
     
-        if(!assetName || !categoryName || !make || !model || !unitWeight || !isEwaste){
+        if(!assetName || !categoryName || !make || !model || unitWeight=== null || isEwaste===null){
             return res.status(400).json({
                 message: 'All fields are required.'
             })
@@ -93,6 +94,14 @@ const createAsset = async(req , res)=>{
                 message: 'Category not found.'
             })
         }
+        
+        const checkAsset = await Asset.findOne({assetName, categoryId: category._id});
+        console.log("🚀 ~ createAsset ~ checkAsset:", checkAsset)
+        if(checkAsset){
+            return res.status(400).json({
+                message: 'Asset with this name already exists in this category.'
+            })
+        }
     
         const asset = await Asset.create({
             assetName,
@@ -101,8 +110,17 @@ const createAsset = async(req , res)=>{
             model,
             unitWeight,
             isEwaste, // Include the isEwaste field
+            description,
         })
-        console.log("🚀 ~ createAsset ~ asset:", asset)
+        console.log("🚀 ~ createAsset ~ asset successfully created:", asset)
+
+        const inventoryEntry = await Inventory.create({
+            assetId: asset._id,
+            totalStock: 0,
+            availableStock: 0,
+            updatedBy: req.user.id,
+        })
+        console.log("🚀 ~ createAsset ~ asset has made inventoryEntry:", inventoryEntry)
     
         return res.status(201).json({
             success: true,
@@ -175,6 +193,44 @@ const updateInventory = async(req ,res)=>{
         })
     }
 }
+const createProjectLocation = async (req, res) => {
+    try{
+        const { location } = req.body;
+        if(!location){
+            return res.status(400).json({
+                success: false,
+                statusCode: 400,
+                msg: 'Location name is required.'
+            })
+        }
+        const existingLocation = await ProjectLocation.find({location});
+        if(existingLocation.length > 0){
+            return res.status(400).json({
+                success: false,
+                statusCode: 400,
+                msg: 'Location already exists.'
+            })
+        }
+        const newLocation = await ProjectLocation.create({
+            location: location,
+        })
+        console.log("🚀 ~ createProjectLocation ~ newLocation:", newLocation)
+        return res.status(201).json({
+            success: true,
+            statusCode: 201,
+            msg: 'Location created successfully,',
+            newLocation,
+        })
+        
+    }catch(err){
+        console.log("🚀 ~ createProjectLocation ~ err:", err)
+        return res.status(500).json({
+            success: false,
+            statusCode: 500,
+            msg: 'Internal server error.'
+        })
+    }
+}
 
 export {
     createDepartment,
@@ -182,4 +238,5 @@ export {
     createAsset,
     createAssetCategory,
     updateInventory,
+    createProjectLocation,
 }
