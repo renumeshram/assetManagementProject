@@ -29,6 +29,10 @@ const assetSchema = new mongoose.Schema({
     isEwaste:{
         type: Boolean,
         default: false, // Default value for isEwaste
+    },
+    description:{
+        type: String,
+        default: "", // Default value for description
     }
 }, {timestamps: true});
 
