@@ -15,6 +15,8 @@ import "react-toastify/dist/ReactToastify.css";
 import AddAsset from "../inventory/AddAsset";
 import CreateInventory from "../inventory/CreateInventory";
 import EwasteReport from "../ewaste/EwasteReport";
+import AdminPasswordManagement from "../password/AdminPasswordManagement";
+import UserChangePassword from "../password/UserChangePassword";
 
 
 
@@ -67,6 +69,8 @@ const AppLayout = () => {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
             <Route path="/add-asset" element= {<AddAsset/>}/>
             <Route path="/create-inventory" element= {<CreateInventory/>}/>
+            <Route path="/manage-passwords" element= {<AdminPasswordManagement/>}/>
+            <Route path="/change-password" element= {<UserChangePassword/>}/>
           </Routes>
         </main>
       </div>
