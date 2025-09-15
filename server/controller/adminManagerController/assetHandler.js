@@ -69,37 +69,44 @@ const issueAsset = async (req, res) => {
         await request.save();
         console.log("🚀 ~ issueAsset ~ request updated:", request);
 
-        // Handle e-waste creation based on workflow
+        // Handle e-waste creation for e-waste assets
+        let ewasteRecords = [];
         if (request.assetId.isEwaste) {
-            let status = 'generated';
-            let returnedQty = 0;
+            // 1. Always create a "generated" e-waste record for the issued asset
+            const generatedEwasteRecord = await EwasteRecords.create({
+                transactionId: transaction.id,
+                assetId: request.assetId._id,
+                quantity: request.quantity, // Full issued quantity
+                totalWeight: Number(request.assetId.unitWeight) * request.quantity,
+                receiveDate: new Date(),
+                status: 'generated'
+            });
 
-            if (ewasteReceived) {
-                //validate ewaste quantity
+            ewasteRecords.push(generatedEwasteRecord);
+            console.log("🚀 ~ issueAsset ~ generated ewasteRecord:", generatedEwasteRecord);
+
+            // 2. If old e-waste is received, create additional "collected" record
+            if (ewasteReceived && ewasteQuantity > 0) {
+                // Validate ewaste quantity
                 if (ewasteQuantity > request.quantity) {
                     return res.status(400).json({
                         success: false,
                         msg: 'Returned e-waste quantity cannot exceed issued quantity'
                     });
                 }
-                returnedQty = ewasteQuantity;
-                status = ewasteQuantity > 0 ? 'collected' : 'generated';
+
+                const collectedEwasteRecord = await EwasteRecords.create({
+                    transactionId: transaction.id,
+                    assetId: request.assetId._id,
+                    quantity: ewasteQuantity,
+                    totalWeight: Number(request.assetId.unitWeight) * ewasteQuantity,
+                    receiveDate: new Date(),
+                    status: 'collected'
+                });
+
+                ewasteRecords.push(collectedEwasteRecord);
+                console.log("🚀 ~ issueAsset ~ collected ewasteRecord:", collectedEwasteRecord);
             }
-            //Debugging logs
-            console.log("Unit weight:", request.assetId.unitWeight, "Parsed:", Number(request.assetId.unitWeight));
-            console.log("Returned Qty:", returnedQty);
-
-
-            const ewasteRecord = await EwasteRecords.create({
-                transactionId: transaction.id,
-                assetId: request.assetId._id,
-                quantity: returnedQty,
-                totalWeight:  Number(request.assetId.unitWeight) * returnedQty,
-                receiveDate: new Date(),
-                status // 'collected' if old cartridge received, 'generated' if not
-            });
-
-            console.log(`🚀 ~ issueAsset ~ ewasteRecord created with status: ${status}:`, ewasteRecord);
         }
 
         return res.status(200).json({
@@ -107,7 +114,11 @@ const issueAsset = async (req, res) => {
             statusCode: 200,
             msg: 'Asset issued successfully',
             transactionId: transaction._id,
-            ewasteStatus: request.assetId.isEwaste ? (ewasteReceived ? 'collected' : 'generated') : null
+            ewasteStatus: {
+                generated: request.assetId.isEwaste ? true : false,
+                collected: request.assetId.isEwaste && ewasteReceived && ewasteQuantity > 0 ? true : false,
+                recordsCreated: ewasteRecords.length
+            }
         });
 
     } catch (err) {
