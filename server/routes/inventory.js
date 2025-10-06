@@ -5,13 +5,13 @@ import { getAssetInventory } from '../controller/adminManagerController/assetHan
 
 const inventoryRouter =express.Router();
 
-inventoryRouter.get('/', authMiddleware(["admin", "manager"]), getInventoryList)
-inventoryRouter.get('/inventoryHistory',authMiddleware(["admin"]), getInventoryHistory);
-inventoryRouter.get('/lowStockAlerts',authMiddleware(["admin"]), getLowStockAlerts);
-inventoryRouter.post('/create-inventory',authMiddleware(["admin"]), createInventory);
-inventoryRouter.get('/:id',authMiddleware(["admin"]), getInventoryById);
-inventoryRouter.put('/update-inventory/:id',authMiddleware(["admin"]), updateInventory);
-inventoryRouter.get('/asset/:id', authMiddleware(["admin", "manager"]), getAssetInventory);
+inventoryRouter.get('/', authMiddleware(['superAdmin',"admin", "manager"]), getInventoryList)
+inventoryRouter.get('/inventoryHistory',authMiddleware(['superAdmin',"admin"]), getInventoryHistory);
+inventoryRouter.get('/lowStockAlerts',authMiddleware(['superAdmin',"admin"]), getLowStockAlerts);
+inventoryRouter.post('/create-inventory',authMiddleware(['superAdmin',"admin"]), createInventory);
+inventoryRouter.get('/:id',authMiddleware(['superAdmin',"admin"]), getInventoryById);
+inventoryRouter.put('/update-inventory/:id',authMiddleware(['superAdmin',"admin"]), updateInventory);
+inventoryRouter.get('/asset/:id', authMiddleware(['superAdmin',"admin", "manager"]), getAssetInventory);
 
 
 export {
