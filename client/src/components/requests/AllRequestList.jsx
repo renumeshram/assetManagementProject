@@ -6,7 +6,7 @@ import api from "../../utils/api";
 import { statusForUrl } from "../../utils";
 import { createTheme, ThemeProvider, CssBaseline } from "@mui/material";
 import toast from "react-hot-toast";
-import IssueAssetPopup from "./IssueAssetPopup";
+import IssueAssetPopup from "./IssueassetPopup";
 import RejectRequestPopup from "./RejectRequestPopup";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -117,11 +117,13 @@ const AllRequestsList = () => {
           id: req._id,
           assetName: req.assetId?.assetName || "N/A",
           sapId: req.requestorId?.sapId || "N/A",
+          name: req.requestorId?.name || "N/A",
           department: req.departmentId?.name || "N/A",
           section: req.sectionId?.name || "N/A",
           requestDate: req.requestDate
             ? new Date(req.requestDate).toLocaleDateString('en-GB')
             : "N/A",
+          reviewedBy: req.reviewedBy?.name || "N/A",
         }));
         setRequests(mapped);
       } catch (error) {
@@ -170,12 +172,18 @@ const AllRequestsList = () => {
   const filteredRequests = requests.filter(
     (req) => statusFilter === "all" || req.status === statusFilter
   );
-
   const columns = [
     { 
       field: "sapId", 
       headerName: "SAP ID", 
       minWidth: 100,
+      headerClassName: "dark-header",
+      cellClassName: "dark-cell",
+    },
+    { 
+      field: "name", 
+      headerName: "Name", 
+      minWidth: 80,
       headerClassName: "dark-header",
       cellClassName: "dark-cell",
     },
@@ -203,7 +211,7 @@ const AllRequestsList = () => {
     { 
       field: "quantity", 
       headerName: "Qty", 
-      minWidth: 70,
+      minWidth: 50,
       headerClassName: "dark-header",
       cellClassName: "dark-cell",
     },
@@ -238,6 +246,13 @@ const AllRequestsList = () => {
       headerClassName: "dark-header",
       cellClassName: "dark-cell",
     },
+    { 
+      field: "reviewedBy", 
+      headerName: "Reviewed By", 
+      minWidth: 80,
+      headerClassName: "dark-header",
+      cellClassName: "dark-cell",
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -254,14 +269,14 @@ const AllRequestsList = () => {
           <div className="flex space-x-1">
             <button
               onClick={() => handleRejectClick(params.row)}
-              className="p-1 text-red-400 hover:bg-red-900/50 rounded transition-colors"
+              className="p-1 text-red-400 hover:bg-red-900/50 rounded transition-colors cursor-pointer"
               title="Reject"
             >
               <XCircle className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleIssueClick(params.row)}
-              className="p-1 text-blue-400 hover:bg-blue-900/50 rounded transition-colors"
+              className="p-1 text-blue-400 hover:bg-blue-900/50 rounded transition-colors cursor-pointer"
               title="Issue"
             >
               <Package className="w-4 h-4" />

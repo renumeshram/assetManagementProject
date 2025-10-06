@@ -190,7 +190,7 @@ import MyRequestList from './MyRequestList';
 const RequestsList = () => {
   const { user } = useAuth();
 
-  if(user.role === 'manager' || user.role === 'admin') {
+  if(user.role === 'manager' || user.role === 'admin' || user.role === 'superAdmin') {
     return <AllRequestsList />;
   }
 

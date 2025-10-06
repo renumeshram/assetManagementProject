@@ -9,6 +9,8 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const RequestForm = ({ isDirect = false }) => {
   const [locations, setLocations] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [sections, setSections] = useState([]);
   const [categories, setCategories] = useState([]);
   const [userDetails, setUserDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,17 +27,21 @@ const RequestForm = ({ isDirect = false }) => {
 
   const [errors, setErrors] = useState({});
 
-  // Load location.json, categories, and user details
+  // Load locations, categories, and user details on mount
   useEffect(() => {
-    const loadData = async () => {
+    const loadInitialData = async () => {
       try {
-        const locationResponse = await fetch("/location.json");
-        const locationData = await locationResponse.json();
-        setLocations(locationData.locations);
+        // Fetch locations
+        const locationResponse = await api.get(`${API_URL}/auth/locations`);
+        if (locationResponse.data.success && Array.isArray(locationResponse.data.locations)) {
+          setLocations(locationResponse.data.locations);
+        }
 
+        // Fetch categories
         const categoriesResponse = await api.get("/general/assets");
         setCategories(categoriesResponse.data);
 
+        // Fetch user details
         const userResponse = await api.get(`${API_URL}/general/user-details`);
         setUserDetails(userResponse.data.userDetails);
       } catch (error) {
@@ -46,67 +52,181 @@ const RequestForm = ({ isDirect = false }) => {
       }
     };
 
-    loadData();
+    loadInitialData();
   }, []);
 
-  // Prefill user details into form when available
+  // Prefill location and fetch departments when user details are available
   useEffect(() => {
-    if (userDetails && locations.length > 0) {
-      let matchedDept = "";
-      let matchedSection = "";
+    const prefillUserData = async () => {
+      if (userDetails && locations.length > 0) {
+        const userLocationId = userDetails.locationId || userDetails.location?._id;
+        
+        if (userLocationId) {
+          // Set location
+          setFormData((prev) => ({
+            ...prev,
+            location: userLocationId.toString(),
+          }));
 
-      // Support both locationId and location (name)
-      let userLocationId = userDetails.locationId?.toString() || "";
-      let userLocationName = userDetails.location?.toString() || "";
+          // Fetch departments for user's location
+          try {
+            const deptResponse = await api.get(`${API_URL}/departments-list`, {
+              params: { locationId: userLocationId },
+            });
+            
+            if (deptResponse.data.success && Array.isArray(deptResponse.data.data)) {
+              setDepartments(deptResponse.data.data);
+              
+              // Find and set user's department
+              const userDeptId = userDetails.departmentId || userDetails.department?._id;
+              if (userDeptId) {
+                const matchedDept = deptResponse.data.data.find(
+                  (d) => d._id.toString() === userDeptId.toString()
+                );
+                
+                if (matchedDept) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    department: matchedDept._id.toString(),
+                  }));
 
-      // Try to match by id first, fallback to name
-      let selectedLocation =
-        locations.find((loc) => loc.id.toString() === userLocationId) ||
-        locations.find(
-          (loc) =>
-            loc.name.toLowerCase() === userLocationName.toLowerCase()
-        );
-
-      if (selectedLocation) {
-        // Match department by name
-        if (userDetails.department) {
-          const dept = selectedLocation.departments.find(
-            (d) =>
-              d.name.toLowerCase() ===
-              userDetails.department.toLowerCase()
-          );
-          if (dept) {
-            matchedDept = dept.name;
-
-            // Match section by name
-            if (userDetails.section) {
-              const sec = dept.sections.find(
-                (s) =>
-                  s.toLowerCase() ===
-                  userDetails.section.toLowerCase()
-              );
-              if (sec) matchedSection = sec;
+                  // Fetch sections for user's department
+                  const sectResponse = await api.get(`${API_URL}/sections-list`, {
+                    params: { departmentId: matchedDept._id },
+                  });
+                  
+                  if (sectResponse.data.success && Array.isArray(sectResponse.data.data)) {
+                    setSections(sectResponse.data.data);
+                    
+                    // Find and set user's section
+                    const userSectId = userDetails.sectionId || userDetails.section?._id;
+                    if (userSectId) {
+                      const matchedSect = sectResponse.data.data.find(
+                        (s) => s._id.toString() === userSectId.toString()
+                      );
+                      
+                      if (matchedSect) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          section: matchedSect._id.toString(),
+                        }));
+                      }
+                    }
+                  }
+                }
+              }
             }
+          } catch (error) {
+            console.error("Error prefilling user data:", error);
           }
         }
-
-        setFormData((prev) => ({
-          ...prev,
-          location: selectedLocation.id.toString(),
-          department: matchedDept || userDetails.department || "",
-          section: matchedSection || userDetails.section || "",
-        }));
       }
-    }
+    };
+
+    prefillUserData();
   }, [userDetails, locations]);
 
-  // Derived dropdown data
-  const selectedLocation = locations.find(
-    (loc) => loc.id.toString() === formData.location
-  );
-  const selectedDepartment = selectedLocation?.departments.find(
-    (dept) => dept.name === formData.department
-  );
+  // Fetch departments when location changes
+  const handleLocationChange = async (locationId) => {
+    setFormData({
+      ...formData,
+      location: locationId,
+      department: "",
+      section: "",
+    });
+    setDepartments([]);
+    setSections([]);
+
+    if (locationId) {
+      try {
+        const response = await api.get(`${API_URL}/departments-list`, {
+          params: { locationId },
+        });
+        
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setDepartments(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+        toast.error("Failed to load departments");
+      }
+    }
+  };
+
+  // Fetch sections when department changes
+  const handleDepartmentChange = async (departmentId) => {
+    setFormData({
+      ...formData,
+      department: departmentId,
+      section: "",
+    });
+    setSections([]);
+
+    if (departmentId) {
+      try {
+        const response = await api.get(`${API_URL}/sections-list`, {
+          params: { departmentId },
+        });
+        
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setSections(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching sections:", error);
+        toast.error("Failed to load sections");
+      }
+    }
+  };
+
+  // Get display names for user details
+  const getUserLocationName = () => {
+    if (!userDetails) return "";
+    // First try to find in locations array
+    const loc = locations.find(
+      (l) => l._id.toString() === (userDetails.location?._id || userDetails.location)?.toString()
+    );
+    if (loc){
+      formData.location = loc.location
+      return loc.location;
+    } 
+      formData.location = userDetails?.location
+    
+    // Fallback to userDetails object properties
+    return userDetails.location?.location || userDetails.location || "";
+  };
+
+  const getUserDepartmentName = () => {
+    if (!userDetails) return "";
+    // First try to find in departments array
+    const dept = departments.find(
+      (d) => d._id.toString() === (userDetails.department?._id || userDetails.department)?.toString()
+    );
+    if (dept) {
+      formData.department = dept
+      return dept
+    };
+
+    formData.department = userDetails?.department
+    
+    // Fallback to userDetails object properties
+    return userDetails.department?.name || userDetails.department || "";
+  };
+
+  const getUserSectionName = () => {
+    if (!userDetails) return "";
+    // First try to find in sections array
+    const sect = sections.find(
+      (s) => s._id.toString() === (userDetails.section?._id || userDetails.section)?.toString()
+    );
+    if (sect) {
+      formData.section = sect
+      return sect.name
+    };
+    
+    formData.section = userDetails?.section
+    // Fallback to userDetails object properties
+    return userDetails.section?.name || userDetails.section || "";
+  };
 
   const isUserDetailsPrefilled =
     userDetails &&
@@ -123,21 +243,27 @@ const RequestForm = ({ isDirect = false }) => {
         quantity: Number(formData.quantity),
       });
 
-      const response = await api.post("/request/raise-request", {
+      console.log("🚀 ~ handleSubmit ~ userDetails:", userDetails)
+      const payload = {
         ...formData,
         quantity: Number(formData.quantity),
         requestDate: new Date(formData.requestDate),
-      });
+        location: formData.location || userDetails?.location || null,
+        department: formData.department || userDetails?.department || null,
+        section: formData.section || userDetails?.section || null,
+      }
+      console.log("🚀 ~ handleSubmit ~ payload:", payload)
+
+      const response = await api.post("/request/raise-request", payload );
 
       if (response) {
         toast.success("Request submitted successfully!");
+        
+        // Reset form but keep user details
         setFormData({
-          location:
-            selectedLocation?.id.toString() ||
-            userDetails?.locationId?.toString() ||
-            "",
-          department: userDetails?.department || "",
-          section: userDetails?.section || "",
+          location: formData.location,
+          department: formData.department,
+          section: formData.section,
           category: "",
           asset: "",
           quantity: 1,
@@ -156,7 +282,7 @@ const RequestForm = ({ isDirect = false }) => {
         toast.error("Please fix the highlighted errors!");
       } else {
         console.error("Error submitting request:", error);
-        toast.error("Something went wrong. Try again later.");
+        toast.error(error.response?.data?.message || "Something went wrong. Try again later.");
       }
     }
   };
@@ -164,12 +290,9 @@ const RequestForm = ({ isDirect = false }) => {
   // Clear handler
   const handleClear = () => {
     setFormData({
-      location:
-        selectedLocation?.id.toString() ||
-        userDetails?.locationId?.toString() ||
-        "",
-      department: userDetails?.department || "",
-      section: userDetails?.section || "",
+      location: formData.location,
+      department: formData.department,
+      section: formData.section,
       category: "",
       asset: "",
       quantity: 1,
@@ -202,8 +325,7 @@ const RequestForm = ({ isDirect = false }) => {
             {isDirect ? "Direct Asset Request" : "Request New Asset"}
             {userDetails && (
               <div className="text-sm text-gray-400 font-normal mt-1">
-                Department: {userDetails.department} | Section:{" "}
-                {userDetails.section}
+                Location: {getUserLocationName()} | Department: {getUserDepartmentName()} | Section: {getUserSectionName()}
               </div>
             )}
           </h3>
@@ -213,36 +335,30 @@ const RequestForm = ({ isDirect = false }) => {
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Location
-                {isUserDetailsPrefilled && (
+                {userDetails && (
                   <span className="text-xs text-gray-400 ml-2">
-                    (Auto-filled from your profile)
+                    (From your profile)
                   </span>
                 )}
               </label>
-              <select
-                value={formData.location}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    location: e.target.value,
-                    department: "",
-                    section: "",
-                  })
-                }
-                className={`w-full px-4 py-2 border border-gray-700 rounded-lg text-white ${
-                  isUserDetailsPrefilled
-                    ? "bg-gray-700 cursor-not-allowed opacity-75"
-                    : "bg-gray-800"
-                }`}
-                disabled={isUserDetailsPrefilled}
-              >
-                <option value="">Select Location</option>
-                {locations.map((loc) => (
-                  <option key={loc.id} value={loc.id}>
-                    {loc.name}
-                  </option>
-                ))}
-              </select>
+              {userDetails ? (
+                <div className="w-full px-4 py-2 bg-gray-700 border border-gray-700 rounded-lg text-gray-300 opacity-75">
+                  {getUserLocationName()}
+                </div>
+              ) : (
+                <select
+                  value={formData.location}
+                  onChange={(e) => handleLocationChange(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-700 rounded-lg text-white bg-gray-800"
+                >
+                  <option value="">Select Location</option>
+                  {locations.map((loc) => (
+                    <option key={loc._id} value={loc._id}>
+                      {loc.location}
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.location && (
                 <p className="text-red-500 text-sm mt-1">{errors.location}</p>
               )}
@@ -253,35 +369,31 @@ const RequestForm = ({ isDirect = false }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Department
-                  {isUserDetailsPrefilled && (
+                  {userDetails && (
                     <span className="text-xs text-gray-400 ml-2">
-                      (Auto-filled)
+                      (From your profile)
                     </span>
                   )}
                 </label>
-                <select
-                  value={formData.department}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      department: e.target.value,
-                      section: "",
-                    })
-                  }
-                  className={`w-full px-4 py-2 border border-gray-700 rounded-lg text-white ${
-                    isUserDetailsPrefilled
-                      ? "bg-gray-700 cursor-not-allowed opacity-75"
-                      : "bg-gray-800"
-                  }`}
-                  disabled={isUserDetailsPrefilled || !formData.location}
-                >
-                  <option value="">Select Department</option>
-                  {selectedLocation?.departments.map((dept, index) => (
-                    <option key={index} value={dept.name}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
+                {userDetails ? (
+                  <div className="w-full px-4 py-2 bg-gray-700 border border-gray-700 rounded-lg text-gray-300 opacity-75">
+                    {getUserDepartmentName()}
+                  </div>
+                ) : (
+                  <select
+                    value={formData.department}
+                    onChange={(e) => handleDepartmentChange(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-700 rounded-lg text-white bg-gray-800"
+                    disabled={!formData.location}
+                  >
+                    <option value="">Select Department</option>
+                    {departments.map((dept) => (
+                      <option key={dept._id} value={dept._id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {errors.department && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.department}
@@ -292,31 +404,33 @@ const RequestForm = ({ isDirect = false }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Section
-                  {isUserDetailsPrefilled && (
+                  {userDetails && (
                     <span className="text-xs text-gray-400 ml-2">
-                      (Auto-filled)
+                      (From your profile)
                     </span>
                   )}
                 </label>
-                <select
-                  value={formData.section}
-                  onChange={(e) =>
-                    setFormData({ ...formData, section: e.target.value })
-                  }
-                  className={`w-full px-4 py-2 border border-gray-700 rounded-lg text-white ${
-                    isUserDetailsPrefilled
-                      ? "bg-gray-700 cursor-not-allowed opacity-75"
-                      : "bg-gray-800"
-                  }`}
-                  disabled={isUserDetailsPrefilled || !formData.department}
-                >
-                  <option value="">Select Section</option>
-                  {selectedDepartment?.sections.map((sec, index) => (
-                    <option key={index} value={sec}>
-                      {sec}
-                    </option>
-                  ))}
-                </select>
+                {userDetails ? (
+                  <div className="w-full px-4 py-2 bg-gray-700 border border-gray-700 rounded-lg text-gray-300 opacity-75">
+                    {getUserSectionName()}
+                  </div>
+                ) : (
+                  <select
+                    value={formData.section}
+                    onChange={(e) =>
+                      setFormData({ ...formData, section: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-700 rounded-lg text-white bg-gray-800"
+                    disabled={!formData.department}
+                  >
+                    <option value="">Select Section</option>
+                    {sections.map((sec) => (
+                      <option key={sec._id} value={sec._id}>
+                        {sec.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {errors.section && (
                   <p className="text-red-500 text-sm mt-1">{errors.section}</p>
                 )}

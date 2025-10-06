@@ -84,7 +84,7 @@ const IssueAssetPopup = ({ isOpen, onClose, request, onSuccess }) => {
             onClick={onClose}
             className="text-gray-400 hover:text-gray-300 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 cursor-pointer" />
           </button>
         </div>
 
@@ -164,7 +164,7 @@ const IssueAssetPopup = ({ isOpen, onClose, request, onSuccess }) => {
               ) : (
                 <div className="text-red-400 flex items-center">
                   <AlertCircle className="w-4 h-4 mr-2" />
-                  Unable to fetch inventory information
+                  Unable to fetch inventory information, Asset not found in Inventory.
                 </div>
               )}
             </div>
@@ -208,7 +208,7 @@ const IssueAssetPopup = ({ isOpen, onClose, request, onSuccess }) => {
         <div className="flex justify-end space-x-3 p-6 border-t border-gray-700">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors"
+            className="px-4 py-2 text-white hover:bg-blue-500 transition-colors bg-gray-700 rounded-lg cursor-pointer"
             disabled={loading}
           >
             Cancel
@@ -216,7 +216,7 @@ const IssueAssetPopup = ({ isOpen, onClose, request, onSuccess }) => {
           <button
             onClick={handleIssue}
             disabled={loading || !isStockSufficient || fetchingInventory}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center ${
+            className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center cursor-pointer ${
               loading || !isStockSufficient || fetchingInventory
                 ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700 text-white"

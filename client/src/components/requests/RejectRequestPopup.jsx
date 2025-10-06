@@ -151,7 +151,7 @@ const RejectRequestPopup = ({ isOpen, onClose, request, onSuccess }) => {
         <div className="flex justify-end space-x-3 p-6 border-t border-gray-700">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors"
+            className="px-4 py-2 text-white bg-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
             disabled={loading}
           >
             Cancel
@@ -159,7 +159,7 @@ const RejectRequestPopup = ({ isOpen, onClose, request, onSuccess }) => {
           <button
             onClick={handleReject}
             disabled={loading || !rejectionReason.trim()}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center ${
+            className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center cursor-pointer ${
               loading || !rejectionReason.trim()
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 : 'bg-red-600 hover:bg-red-700 text-white'

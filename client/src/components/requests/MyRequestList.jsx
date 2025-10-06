@@ -89,6 +89,7 @@ const MyRequestsList = () => {
           requestDate: req.requestDate
             ? new Date(req.requestDate).toLocaleDateString('en-GB')
             : "N/A",
+            rejectionReason: req.rejectionReason || "",
         }));
         setRequests(mapped);
       } catch (error) {
@@ -154,7 +155,7 @@ const MyRequestsList = () => {
       cellClassName: "dark-cell",
     },
     { 
-      field: "comments", 
+      field: "rejectionReason", 
       headerName: "Comments", 
       flex: 1,
       minWidth: 150,
