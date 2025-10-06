@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { userRegisterSchema } from "../../schemas/authSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import api from "../../utils/api";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -13,6 +13,11 @@ const RegisterForm = () => {
   const [locations, setLocations] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [sections, setSections] = useState([]);
+  const [loading, setLoading] = useState({
+    locations: false,
+    departments: false,
+    sections: false,
+  });
 
   const {
     register,
@@ -35,54 +40,103 @@ const RegisterForm = () => {
     },
   });
 
-  // Load locations from public/location.json
-  useEffect(() => {
-    fetch("/location.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.locations?.length > 0) {
-          setLocations(data.locations);
-        }
-      })
-      .catch((err) => console.error("Failed to load locations.json:", err));
-  }, []);
-
   // Watch for changes
   const selectedLocation = watch("location");
   const selectedDepartment = watch("department");
 
+  // Fetch locations on component mount
+  useEffect(() => {
+    fetchLocations();
+  }, []);
+
+  const fetchLocations = async () => {
+    setLoading((prev) => ({ ...prev, locations: true }));
+    try {
+      const res = await api.get(`${API_URL}/auth/locations`);
+      // console.log("🚀 ~ fetchLocations ~ res:", res.data);
+      
+      if (res.data.success && Array.isArray(res.data.locations)) {
+        setLocations(res.data.locations);
+      } else {
+        setLocations([]);
+      }
+    } catch (err) {
+      console.error("Failed to load locations:", err);
+      toast.error("Failed to load locations");
+      setLocations([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, locations: false }));
+    }
+  };
+
+  // Fetch departments when location changes
+  const fetchDepartments = async (locationId) => {
+    setLoading((prev) => ({ ...prev, departments: true }));
+    try {
+      const res = await api.get(`${API_URL}/auth/departments-list`, {
+        params: { locationId },
+      });
+      if (res.data.success && Array.isArray(res.data.data)) {
+        setDepartments(res.data.data);
+      } else {
+        setDepartments([]);
+      }
+    } catch (err) {
+      console.error("Failed to load departments:", err);
+      toast.error("Failed to load departments");
+      setDepartments([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, departments: false }));
+    }
+  };
+
+  // Fetch sections when department changes
+  const fetchSections = async (departmentId) => {
+    setLoading((prev) => ({ ...prev, sections: true }));
+    try {
+      const res = await api.get(`${API_URL}/auth/sections-list`, {
+        params: { departmentId },
+      });
+      if (res.data.success && Array.isArray(res.data.data)) {
+        setSections(res.data.data);
+      } else {
+        setSections([]);
+      }
+    } catch (err) {
+      console.error("Failed to load sections:", err);
+      toast.error("Failed to load sections");
+      setSections([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, sections: false }));
+    }
+  };
+
   // Update departments when location changes
   useEffect(() => {
     if (selectedLocation) {
-      const loc = locations.find((l) => l.name === selectedLocation);
-      if (loc) {
-        setDepartments(loc.departments);
-        setValue("department", "");
-        setSections([]);
-        setValue("section", "");
-      }
+      fetchDepartments(selectedLocation);
+      setValue("department", "");
+      setSections([]);
+      setValue("section", "");
     } else {
       setDepartments([]);
       setSections([]);
     }
-  }, [selectedLocation, locations, setValue]);
+  }, [selectedLocation, setValue]);
 
   // Update sections when department changes
   useEffect(() => {
     if (selectedDepartment) {
-      const dept = departments.find((d) => d.name === selectedDepartment);
-      if (dept) {
-        setSections(dept.sections);
-        setValue("section", "");
-      }
+      fetchSections(selectedDepartment);
+      setValue("section", "");
     } else {
       setSections([]);
     }
-  }, [selectedDepartment, departments, setValue]);
+  }, [selectedDepartment, setValue]);
 
   const onSubmit = async (data) => {
     try {
-      const res = await axios.post(`${API_URL}/auth/register`, data);
+      const res = await api.post(`${API_URL}/auth/register`, data);
       console.log("🚀 ~ onSubmit ~ res:", res.data);
 
       if (res) {
@@ -160,14 +214,17 @@ const RegisterForm = () => {
           <div>
             <select
               {...register("location")}
+              disabled={loading.locations}
               className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
                          focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                         outline-none transition-all"
+                         outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">Select Location</option>
+              <option value="">
+                {loading.locations ? "Loading locations..." : "Select Location"}
+              </option>
               {locations.map((loc) => (
-                <option key={loc.id} value={loc.name}>
-                  {loc.name}
+                <option key={loc._id} value={loc._id}>
+                  {loc.location}
                 </option>
               ))}
             </select>
@@ -183,13 +240,18 @@ const RegisterForm = () => {
             <div>
               <select
                 {...register("department")}
+                disabled={loading.departments}
                 className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
                            focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                           outline-none transition-all"
+                           outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">Select Department</option>
+                <option value="">
+                  {loading.departments
+                    ? "Loading departments..."
+                    : "Select Department"}
+                </option>
                 {departments.map((dept) => (
-                  <option key={dept.id} value={dept.name}>
+                  <option key={dept._id} value={dept._id}>
                     {dept.name}
                   </option>
                 ))}
@@ -207,14 +269,17 @@ const RegisterForm = () => {
             <div>
               <select
                 {...register("section")}
+                disabled={loading.sections}
                 className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
                            focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                           outline-none transition-all"
+                           outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">Select Section</option>
-                {sections.map((sec, idx) => (
-                  <option key={idx} value={sec}>
-                    {sec}
+                <option value="">
+                  {loading.sections ? "Loading sections..." : "Select Section"}
+                </option>
+                {sections.map((sec) => (
+                  <option key={sec._id} value={sec._id}>
+                    {sec.name}
                   </option>
                 ))}
               </select>
@@ -264,8 +329,8 @@ const RegisterForm = () => {
           <div className="flex items-center justify-center">
             <label className="flex items-center text-sm text-gray-400">
               Already Registered?
-              <a
-                href="/login"
+              
+                <a href="/login"
                 className="ml-2 text-emerald-400 hover:underline"
               >
                 Login here

@@ -93,6 +93,11 @@ const LoginForm = () => {
             Register here
           </a>
         </div>
+        <div className="mt-6 text-center text-sm text-gray-400">
+          <a href="/forgot-password" className="text-emerald-400 hover:underline">
+            Forgot Password?
+          </a>
+        </div>
       </div>
     </div>
     </div>
