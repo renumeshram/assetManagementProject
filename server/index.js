@@ -17,7 +17,12 @@ import { requestRouter } from './routes/requests.js';
 import { transactionRouter } from './routes/transactions.js';
 import generalRouter from './routes/general.js';
 import { inventoryRouter } from './routes/inventory.js';
-import { ewasteRouter } from './routes/ewaste.js';
+import  ewasteRouter  from './routes/ewaste.js';
+import locationRouter from './routes/location.js';
+import ensureSuperAdmin from './utility/ensureSuperAdmin.js';
+import dashboardRouter from './routes/dashboard.js';
+import api from '../client/src/utils/api.js';
+import forgotPwRouter from './routes/forgotPw.js';
 
 
 const app = express();
@@ -56,9 +61,13 @@ app.use('/api/transaction', transactionRouter)
 app.use('/api/general', generalRouter),
 app.use('/api/inventory', inventoryRouter)
 app.use('/api/ewaste', ewasteRouter)
+app.use('/api/locations', locationRouter)
+app.use('/api/dashboard', dashboardRouter)
+app.use('/api/forgot-password', forgotPwRouter)
 
-mongoose.connect(process.env.MONGO_URL).then(() =>{
+mongoose.connect(process.env.MONGO_URL).then(async() =>{
     console.log("Connected to MongoDB");
+    await ensureSuperAdmin();
     app.listen(PORT, () => 
         console.log(`Server is running on port ${PORT}`)
     )

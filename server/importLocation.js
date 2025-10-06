@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-import Location from "./models/location.js";
+import ProjectLocation from "./models/projectLocation.js";
 import Department from "./models/department.js";
 import Section from "./models/section.js";
 
@@ -19,11 +19,11 @@ const importData = async () => {
     const data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
 
     // clear old data
-    await Promise.all([Location.deleteMany(), Department.deleteMany(), Section.deleteMany()]);
+    await Promise.all([ProjectLocation.deleteMany(), Department.deleteMany(), Section.deleteMany()]);
 
     for (const loc of data.locations) {
       // create location
-      const locationDoc = await Location.create({ name: loc.name });
+      const locationDoc = await ProjectLocation.create({ location: loc.name });
 
       for (const dept of loc.departments) {
         // create department
