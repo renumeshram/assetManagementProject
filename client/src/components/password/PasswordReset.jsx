@@ -9,24 +9,25 @@ import {
   validatePasswordMatch,
   getPasswordStrength,
 } from "../../schemas/passwordManagementSchema";
+import api from "../../utils/api";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Helper to map strength colors to CSS values
 const getStrengthColor = (color) => {
   switch (color) {
     case "green":
-      return "#22c55e"; // Tailwind green-500
+      return "#22c55e";
     case "blue":
-      return "#3b82f6"; // Tailwind blue-500
+      return "#3b82f6";
     case "yellow":
-      return "#eab308"; // Tailwind yellow-500
+      return "#eab308";
     case "orange":
-      return "#f97316"; // Tailwind orange-500
+      return "#f97316";
     default:
-      return "#ef4444"; // Tailwind red-500
+      return "#ef4444";
   }
 };
 
-// Password Strength Indicator (inline)
 const PasswordStrengthIndicator = ({ strength }) => {
   if (!strength) return null;
   return (
@@ -50,7 +51,7 @@ const PasswordStrengthIndicator = ({ strength }) => {
   );
 };
 
-const AdminPasswordReset = () => {
+const PasswordReset = ({ role }) => {
   const [activeTab, setActiveTab] = useState("single");
   const [singleResetData, setSingleResetData] = useState({
     sapId: "",
@@ -72,17 +73,26 @@ const AdminPasswordReset = () => {
     bulk: null,
   });
 
-  // Single reset input handling
+  // ----------- INPUT HANDLERS ------------
   const handleSingleInputChange = (e) => {
     const { name, value } = e.target;
     setSingleResetData((prev) => ({ ...prev, [name]: value }));
 
-    if (name === "sapId" && value) {
-      const validation = validateSapId(value);
+    if (errors.single[name]) {
       setErrors((prev) => ({
         ...prev,
-        single: { ...prev.single, sapId: validation.error || "" },
+        single: { ...prev.single, [name]: "" },
       }));
+    }
+
+    if (name === "sapId" && value) {
+      const validation = validateSapId(value);
+      if (!validation.valid) {
+        setErrors((prev) => ({
+          ...prev,
+          single: { ...prev.single, sapId: validation.error },
+        }));
+      }
     }
 
     if (name === "password") {
@@ -90,36 +100,43 @@ const AdminPasswordReset = () => {
       setPasswordStrength((prev) => ({ ...prev, single: strength }));
 
       const validation = validatePassword(value);
-      setErrors((prev) => ({
-        ...prev,
-        single: { ...prev.single, password: validation.error || "" },
-      }));
+      if (!validation.valid) {
+        setErrors((prev) => ({
+          ...prev,
+          single: { ...prev.single, password: validation.error },
+        }));
+      }
     }
   };
 
-  // Bulk reset input handling
   const handleBulkInputChange = (e) => {
     const { name, value } = e.target;
     setBulkResetData((prev) => ({ ...prev, [name]: value }));
+
+    if (errors.bulk[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        bulk: { ...prev.bulk, [name]: "" },
+      }));
+    }
 
     if (name === "password") {
       const strength = getPasswordStrength(value);
       setPasswordStrength((prev) => ({ ...prev, bulk: strength }));
 
       const validation = validatePassword(value);
-      setErrors((prev) => ({
-        ...prev,
-        bulk: { ...prev.bulk, password: validation.error || "" },
-      }));
-
-      if (bulkResetData.confirmPassword) {
-        const match = validatePasswordMatch(
-          value,
-          bulkResetData.confirmPassword
-        );
+      if (!validation.valid) {
         setErrors((prev) => ({
           ...prev,
-          bulk: { ...prev.bulk, confirmPassword: match.error || "" },
+          bulk: { ...prev.bulk, password: validation.error },
+        }));
+      }
+
+      if (bulkResetData.confirmPassword) {
+        const match = validatePasswordMatch(value, bulkResetData.confirmPassword);
+        setErrors((prev) => ({
+          ...prev,
+          bulk: { ...prev.bulk, confirmPassword: match.valid ? "" : match.error },
         }));
       }
     }
@@ -128,7 +145,7 @@ const AdminPasswordReset = () => {
       const match = validatePasswordMatch(bulkResetData.password, value);
       setErrors((prev) => ({
         ...prev,
-        bulk: { ...prev.bulk, confirmPassword: match.error || "" },
+        bulk: { ...prev.bulk, confirmPassword: match.valid ? "" : match.error },
       }));
     }
   };
@@ -137,80 +154,82 @@ const AdminPasswordReset = () => {
     setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  // Submit single reset form
+  // ----------- API HANDLERS ------------
   const handleSingleReset = async () => {
     const validation = validateAdminSingleResetForm(singleResetData);
-
     if (!validation.success) {
-      setErrors((prev) => ({ ...prev, single: validation.errors }));
-      Object.values(validation.errors).forEach((err) => {
-        if (err) toast.error(err);
-      });
+      setErrors((prev) => ({ ...prev, single: validation.errors || {} }));
+      toast.error("Please fix the errors below");
       return;
     }
 
     setLoading((prev) => ({ ...prev, single: true }));
+    setErrors((prev) => ({ ...prev, single: {} }));
+
     try {
-      const response = await fetch("/api/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validation.data),
-      });
+      // pick endpoint based on role
+      const endpoint =
+        role === "superAdmin"
+          ? `${API_URL}/auth/reset-admin-password`
+          : `${API_URL}/auth/reset-password`;
 
-      const data = await response.json();
+      const response = await api.post(endpoint, validation.data);
 
-      if (response.ok) {
-        toast.success(data.msg || "Password reset successful");
+      if (response.data) {
+        toast.success(response.data.msg || "Password reset successful");
         setSingleResetData({ sapId: "", password: "" });
-        setErrors((prev) => ({ ...prev, single: {} }));
         setPasswordStrength((prev) => ({ ...prev, single: null }));
-      } else {
-        toast.error(data.msg || "Failed to reset password");
       }
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (error) {
+      console.error("🚀 ~ handleSingleReset ~ error:", error);
+      if (error.response?.data?.msg) {
+        toast.error(error.response.data.msg);
+      } else if (error.request) {
+        toast.error("No response from server. Please try again.");
+      } else {
+        toast.error("Network error. Please try again later.");
+      }
     } finally {
       setLoading((prev) => ({ ...prev, single: false }));
     }
   };
 
-  // Submit bulk reset form
   const handleBulkReset = async () => {
     const validation = validateAdminBulkResetForm(bulkResetData);
-
     if (!validation.success) {
-      setErrors((prev) => ({ ...prev, bulk: validation.errors }));
-      Object.values(validation.errors).forEach((err) => {
-        if (err) toast.error(err);
-      });
+      setErrors((prev) => ({ ...prev, bulk: validation.errors || {} }));
+      toast.error("Please fix the errors below");
       return;
     }
 
     setLoading((prev) => ({ ...prev, bulk: true }));
+    setErrors((prev) => ({ ...prev, bulk: {} }));
+
     try {
-      const response = await fetch("/api/reset-all-passwords", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: validation.data.password }),
+      const response = await api.post(`${API_URL}/auth/reset-all-passwords`, {
+        password: validation.data.password,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.msg || "All user passwords reset successfully");
+      if (response.data) {
+        toast.success(response.data.msg || "All user passwords reset successfully");
         setBulkResetData({ password: "", confirmPassword: "" });
-        setErrors((prev) => ({ ...prev, bulk: {} }));
         setPasswordStrength((prev) => ({ ...prev, bulk: null }));
-      } else {
-        toast.error(data.msg || "Failed to reset passwords");
       }
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (error) {
+      console.error("🚀 ~ handleBulkReset ~ error:", error);
+      if (error.response?.data?.msg) {
+        toast.error(error.response.data.msg);
+      } else if (error.request) {
+        toast.error("No response from server. Please try again.");
+      } else {
+        toast.error("Network error. Please try again.");
+      }
     } finally {
       setLoading((prev) => ({ ...prev, bulk: false }));
     }
   };
 
+  // ----------- RENDER ------------
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <Toaster position="top-right" />
@@ -219,11 +238,13 @@ const AdminPasswordReset = () => {
           <div className="flex items-center justify-center p-6 border-b border-gray-700">
             <Users className="h-8 w-8 text-red-400 mr-2" />
             <h2 className="text-2xl font-bold text-white">
-              Admin Password Management
+              {role === "superAdmin"
+                ? "SuperAdmin Password Management"
+                : "Admin Password Management"}
             </h2>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs (hide bulk tab for superAdmin) */}
           <div className="flex border-b border-gray-700">
             <button
               onClick={() => setActiveTab("single")}
@@ -236,26 +257,28 @@ const AdminPasswordReset = () => {
               <User className="h-5 w-5 inline mr-2" />
               Reset Single User
             </button>
-            <button
-              onClick={() => setActiveTab("bulk")}
-              className={`flex-1 py-4 px-6 text-center font-medium ${
-                activeTab === "bulk"
-                  ? "bg-gray-700 text-white border-b-2 border-red-500"
-                  : "text-gray-400 hover:text-white hover:bg-gray-750"
-              }`}
-            >
-              <Users className="h-5 w-5 inline mr-2" />
-              Reset All Users
-            </button>
+            {role === "admin" && (
+              <button
+                onClick={() => setActiveTab("bulk")}
+                className={`flex-1 py-4 px-6 text-center font-medium ${
+                  activeTab === "bulk"
+                    ? "bg-gray-700 text-white border-b-2 border-red-500"
+                    : "text-gray-400 hover:text-white hover:bg-gray-750"
+                }`}
+              >
+                <Users className="h-5 w-5 inline mr-2" />
+                Reset All Users
+              </button>
+            )}
           </div>
 
-          {/* Single Reset */}
+          {/* Render tabs */}
           {activeTab === "single" && (
             <div className="p-8 space-y-6">
               {/* SAP ID */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  User SAP ID
+                  {role === "superAdmin" ? "Admin SAP ID" : "User SAP ID"}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -267,7 +290,7 @@ const AdminPasswordReset = () => {
                     className={`w-full pl-10 pr-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.single.sapId ? "border-red-500" : "border-gray-600"
                     }`}
-                    placeholder="Enter user's SAP ID"
+                    placeholder={`Enter ${role === "superAdmin" ? "admin" : "user"}'s SAP ID`}
                   />
                 </div>
                 {errors.single.sapId && (
@@ -291,9 +314,7 @@ const AdminPasswordReset = () => {
                     value={singleResetData.password}
                     onChange={handleSingleInputChange}
                     className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      errors.single.password
-                        ? "border-red-500"
-                        : "border-gray-600"
+                      errors.single.password ? "border-red-500" : "border-gray-600"
                     }`}
                     placeholder="Enter new password"
                   />
@@ -318,7 +339,6 @@ const AdminPasswordReset = () => {
                 <PasswordStrengthIndicator strength={passwordStrength.single} />
               </div>
 
-              {/* Submit */}
               <button
                 type="button"
                 onClick={handleSingleReset}
@@ -334,19 +354,16 @@ const AdminPasswordReset = () => {
             </div>
           )}
 
-          {/* Bulk Reset */}
-          {activeTab === "bulk" && (
+          {role === "admin" && activeTab === "bulk" && (
             <div className="p-8 space-y-6">
-              {/* Warning */}
               <div className="p-4 bg-yellow-900 border border-yellow-700 rounded-lg">
                 <p className="text-yellow-300 font-medium">⚠️ Warning:</p>
                 <p className="text-yellow-200 mt-1">
-                  This will reset passwords for ALL non-admin users. This action
-                  cannot be undone.
+                  This will reset passwords for ALL non-admin users. This action cannot be undone.
                 </p>
               </div>
 
-              {/* Password */}
+              {/* Bulk form inputs */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   New Password for All Users
@@ -359,9 +376,7 @@ const AdminPasswordReset = () => {
                     value={bulkResetData.password}
                     onChange={handleBulkInputChange}
                     className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                      errors.bulk.password
-                        ? "border-red-500"
-                        : "border-gray-600"
+                      errors.bulk.password ? "border-red-500" : "border-gray-600"
                     }`}
                     placeholder="Enter new password for all users"
                   />
@@ -370,11 +385,7 @@ const AdminPasswordReset = () => {
                     onClick={() => togglePasswordVisibility("bulk")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
                   >
-                    {showPasswords.bulk ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    {showPasswords.bulk ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {errors.bulk.password && (
@@ -386,7 +397,6 @@ const AdminPasswordReset = () => {
                 <PasswordStrengthIndicator strength={passwordStrength.bulk} />
               </div>
 
-              {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Confirm Password
@@ -399,9 +409,7 @@ const AdminPasswordReset = () => {
                     value={bulkResetData.confirmPassword}
                     onChange={handleBulkInputChange}
                     className={`w-full pl-10 pr-12 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                      errors.bulk.confirmPassword
-                        ? "border-red-500"
-                        : "border-gray-600"
+                      errors.bulk.confirmPassword ? "border-red-500" : "border-gray-600"
                     }`}
                     placeholder="Confirm new password"
                   />
@@ -410,11 +418,7 @@ const AdminPasswordReset = () => {
                     onClick={() => togglePasswordVisibility("bulkConfirm")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
                   >
-                    {showPasswords.bulkConfirm ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    {showPasswords.bulkConfirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
                 {errors.bulk.confirmPassword && (
@@ -425,7 +429,6 @@ const AdminPasswordReset = () => {
                 )}
               </div>
 
-              {/* Submit */}
               <button
                 type="button"
                 onClick={handleBulkReset}
@@ -446,4 +449,4 @@ const AdminPasswordReset = () => {
   );
 };
 
-export default AdminPasswordReset;
+export default PasswordReset;
