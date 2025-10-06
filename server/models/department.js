@@ -12,7 +12,7 @@ const departmentSchema = new mongoose.Schema({
   },
   locationId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Location',
+    ref: 'ProjectLocation',
     required: true,
   },
 }, { timestamps: true });

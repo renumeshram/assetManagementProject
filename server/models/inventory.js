@@ -34,6 +34,11 @@ const inventorySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
+    },
+    locationId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ProjectLocation',
+        // required
     }
 },{timestamps: true});
 

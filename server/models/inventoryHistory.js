@@ -12,7 +12,12 @@ const inventoryHistorySchema = new mongoose.Schema({
         required: true,
         
     },
-    
+    locationId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ProjectLocation',
+        required: true,
+        
+    },
         action:{
             type: String,
             // enum: ['added', 'removed', 'updated', 'moved'],

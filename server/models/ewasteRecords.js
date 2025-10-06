@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const ewasteRecordsSchema = new mongoose.Schema({
-    transactionId:{
+    transactionId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'AssetTransaction',
         // required: true,
@@ -11,12 +11,12 @@ const ewasteRecordsSchema = new mongoose.Schema({
         ref: 'Asset',
         required: true,
     },
-    quantity:{
+    quantity: {
         type: Number,
         required: true,
         min: 1,
     },
-    totalWeight:{
+    totalWeight: {
         type: Number,
         required: true,
         min: 0,
@@ -25,13 +25,18 @@ const ewasteRecordsSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    status:{
+    status: {
         type: String,
         enum: ['generated', 'collected'],
         default: 'generated', // Default status can be set to 'generated'
+    },
+    locationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ProjectLocation',
+        // required
     }
 
-}, {timestamps: true});
+}, { timestamps: true });
 
 // Fix: Check if model already exists before creating it
 const EwasteRecords = mongoose.models.EwasteRecords || mongoose.model('EwasteRecords', ewasteRecordsSchema);
