@@ -1,36 +1,45 @@
 import express from 'express';
 import User from '../../models/users.js';
+// import bcrypt from 'bcrypt';
 
-const resetPassword = async(req , res)=>{
-    try{
-        const {sapId, password} = req.body;
-        if(!sapId || !password){
-            return res.status(400).json({msg: 'Please provide SAP ID and new password'});
-        }
-        const user = await User.findOne({sapId});
-        if(!user){
-            return res.status(404).json({msg: 'User not found'});
-        }   
-        user.password = password; // Assuming password is hashed in the User model
+const resetPassword = async (req, res) => {
+  try {
+    const { sapId, password } = req.body;
 
-        await user.save()
-        console.log(`Password for user with SAP ID ${sapId} has been reset successfully`);
+    if (!sapId || !password) {
+      return res.status(400).json({ msg: "Please provide SAP ID and new password" });
+    }
 
-        res.status(200).json({
-            success: true,
-            statusCode: 200,
-            msg: `Password reset successfully for user with SAP ID ${sapId}`,
-        });
-    }catch(err){
-        console.log("🚀 ~ resetPassword ~ err:", err)
-        return res.status(500).json({
-            success: false,
-            statusCode: 500,
-            msg: 'Internal server error',
-            error: err.message
-        });
-    }   
-}
+    const user = await User.findOne({ sapId });
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    // Hash the new password
+    // const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = password;
+
+    // Skip validation for assignedLocationId if not updating it
+    await user.save({ validateBeforeSave: false });
+
+    console.log(`Password for user with SAP ID ${sapId} has been reset successfully`);
+
+    res.status(200).json({
+      success: true,
+      statusCode: 200,
+      msg: `Password reset successfully for user with SAP ID ${sapId}`,
+    });
+  } catch (err) {
+    console.log("🚀 ~ resetPassword ~ err:", err);
+    return res.status(500).json({
+      success: false,
+      statusCode: 500,
+      msg: "Internal server error",
+      error: err.message,
+    });
+  }
+};
+
 
 const resetAllPasswords = async(req, res) => {
     try{
@@ -39,7 +48,7 @@ const resetAllPasswords = async(req, res) => {
             return res.status(400).json({msg: 'Please provide new password for all users'});
         }
 
-        const users = await User.find({role: { $ne: 'admin' }});
+        const users = await User.find({role: {  $in: ['user', 'manager'] }});
         if(users.length === 0) {
             return res.status(404).json({msg: 'No users found'});
         }

@@ -9,12 +9,150 @@ import EwasteRecords from '../../models/ewasteRecords.js';
 import Request from '../../models/request.js';
 
 // Updated issueAsset controller
+// const issueAsset = async (req, res) => {
+//     try {
+//         const requestId = req.params.id;
+//         const { ewasteReceived = false, ewasteQuantity = 0 } = req.body; // Get e-waste status from request body
+
+//         const request = await Request.findById(requestId).populate('assetId').populate('categoryId').populate({
+//             path: 'departmentId',
+//             select: 'locationId name', //fetch only locationId
+//         });
+
+//         if (!request || request.status !== 'pending') {
+//             return res.status(404).json({
+//                 success: false,
+//                 statusCode: 404,
+//                 msg: 'Invalid or non-pending request'
+//             });
+//         }
+
+//         const locationId = request.departmentId.locationId;
+
+//         const inventory = await Inventory.findOne({
+//             assetId: request.assetId._id,
+//             locationId: locationId,
+//         });
+//         console.log("🚀 ~ issueAsset ~ inventory:", inventory)
+
+//         if (!inventory || inventory.availableStock < request.quantity) {
+//             return res.status(400).json({
+//                 success: false,
+//                 statusCode: 400,
+//                 msg: 'Insufficient stock available for the requested asset'
+//             });
+//         }
+
+//         const transaction = new AssetTransaction({
+//             assetId: request.assetId._id,
+//             categoryId: request.categoryId._id,
+//             issuedTo: request.requestorId,
+//             issuedBy: req.user.id,
+//             transactionType: 'issue',
+//             quantity: request.quantity,
+//             issueDate: new Date(),
+//             sectionId: request.sectionId,
+//             departmentId: request.departmentId,
+//         });
+//         await transaction.save();
+
+//         console.log("🚀 ~ issueAsset ~ transaction:", transaction);
+
+//         // Update inventory
+//         await Inventory.findOneAndUpdate(
+//             { assetId: request.assetId._id, locationId: locationId },
+//             {
+//                 $inc: {
+//                     availableStock: -request.quantity,
+//                     issuedStock: request.quantity
+//                 },
+//                 lastUpdated: new Date(),
+//                 updatedBy: req.user.id,
+//             }
+//         );
+
+//         request.status = 'issued';
+//         request.reviewedBy = req.user.id;
+//         request.reviewDate = new Date();
+//         await request.save();
+//         console.log("🚀 ~ issueAsset ~ request updated:", request);
+
+//         // Handle e-waste creation for e-waste assets
+//         let ewasteRecords = [];
+//         if (request.assetId.isEwaste) {
+//             // 1. Always create a "generated" e-waste record for the issued asset
+//             const generatedEwasteRecord = await EwasteRecords.create({
+//                 transactionId: transaction.id,
+//                 assetId: request.assetId._id,
+//                 quantity: request.quantity, // Full issued quantity
+//                 totalWeight: Number(request.assetId.unitWeight) * request.quantity,
+//                 receiveDate: new Date(),
+//                 status: 'generated',
+//                 locationId: locationId,
+//             });
+
+//             ewasteRecords.push(generatedEwasteRecord);
+//             console.log("🚀 ~ issueAsset ~ generated ewasteRecord:", generatedEwasteRecord);
+
+//             // 2. If old e-waste is received, create additional "collected" record
+//             if (ewasteReceived && ewasteQuantity > 0) {
+//                 // Validate ewaste quantity
+//                 if (ewasteQuantity > request.quantity) {
+//                     return res.status(400).json({
+//                         success: false,
+//                         msg: 'Returned e-waste quantity cannot exceed issued quantity'
+//                     });
+//                 }
+
+//                 const collectedEwasteRecord = await EwasteRecords.create({
+//                     transactionId: transaction.id,
+//                     assetId: request.assetId._id,
+//                     quantity: ewasteQuantity,
+//                     totalWeight: Number(request.assetId.unitWeight) * ewasteQuantity,
+//                     receiveDate: new Date(),
+//                     status: 'collected',
+//                     locationId: locationId,
+//                 });
+
+//                 ewasteRecords.push(collectedEwasteRecord);
+//                 console.log("🚀 ~ issueAsset ~ collected ewasteRecord:", collectedEwasteRecord);
+//             }
+//         }
+
+//         return res.status(200).json({
+//             success: true,
+//             statusCode: 200,
+//             msg: 'Asset issued successfully',
+//             transactionId: transaction._id,
+//             ewasteStatus: {
+//                 generated: request.assetId.isEwaste ? true : false,
+//                 collected: request.assetId.isEwaste && ewasteReceived && ewasteQuantity > 0 ? true : false,
+//                 recordsCreated: ewasteRecords.length
+//             }
+//         });
+
+//     } catch (err) {
+//         console.log("🚀 ~ issueAsset ~ err:", err);
+//         return res.status(500).json({
+//             success: false,
+//             statusCode: 500,
+//             msg: 'Internal server error',
+//         });
+//     }
+// };
+
 const issueAsset = async (req, res) => {
     try {
         const requestId = req.params.id;
-        const { ewasteReceived = false, ewasteQuantity = 0 } = req.body; // Get e-waste status from request body
+        const { ewasteReceived = false, ewasteQuantity = 0 } = req.body;
 
-        const request = await Request.findById(requestId).populate('assetId').populate('categoryId');
+        const request = await Request.findById(requestId)
+            .populate('assetId')
+            .populate('categoryId')
+            .populate({
+                path: 'departmentId',
+                select: 'locationId name',
+            });
 
         if (!request || request.status !== 'pending') {
             return res.status(404).json({
@@ -24,14 +162,38 @@ const issueAsset = async (req, res) => {
             });
         }
 
-        const inventory = await Inventory.findOne({ assetId: request.assetId._id });
-        console.log("🚀 ~ issueAsset ~ inventory:", inventory)
+        // Determine locationId based on user role
+        let locationId;
+        if (req.user.role === 'manager') {
+            locationId = req.user.locationId;
+        } else if (req.user.role === 'admin') {
+            locationId = req.user.assignedLocationId;
+        } else {
+            return res.status(403).json({
+                success: false,
+                statusCode: 403,
+                msg: 'Access denied: cannot issue asset for this user role'
+            });
+        }
+
+        if (!locationId) {
+            return res.status(400).json({
+                success: false,
+                statusCode: 400,
+                msg: 'Location not found for this user'
+            });
+        }
+
+        const inventory = await Inventory.findOne({
+            assetId: request.assetId._id,
+            locationId: locationId,
+        });
 
         if (!inventory || inventory.availableStock < request.quantity) {
             return res.status(400).json({
                 success: false,
                 statusCode: 400,
-                msg: 'Insufficient stock available for the requested asset'
+                msg: 'Insufficient stock available for the requested asset at your location'
             });
         }
 
@@ -48,16 +210,11 @@ const issueAsset = async (req, res) => {
         });
         await transaction.save();
 
-        console.log("🚀 ~ issueAsset ~ transaction:", transaction);
-
         // Update inventory
         await Inventory.findOneAndUpdate(
-            { assetId: request.assetId._id },
+            { assetId: request.assetId._id, locationId: locationId },
             {
-                $inc: {
-                    availableStock: -request.quantity,
-                    issuedStock: request.quantity
-                },
+                $inc: { availableStock: -request.quantity, issuedStock: request.quantity },
                 lastUpdated: new Date(),
                 updatedBy: req.user.id,
             }
@@ -67,27 +224,23 @@ const issueAsset = async (req, res) => {
         request.reviewedBy = req.user.id;
         request.reviewDate = new Date();
         await request.save();
-        console.log("🚀 ~ issueAsset ~ request updated:", request);
 
         // Handle e-waste creation for e-waste assets
         let ewasteRecords = [];
         if (request.assetId.isEwaste) {
-            // 1. Always create a "generated" e-waste record for the issued asset
             const generatedEwasteRecord = await EwasteRecords.create({
                 transactionId: transaction.id,
                 assetId: request.assetId._id,
-                quantity: request.quantity, // Full issued quantity
+                quantity: request.quantity,
                 totalWeight: Number(request.assetId.unitWeight) * request.quantity,
                 receiveDate: new Date(),
-                status: 'generated'
+                status: 'generated',
+                locationId: locationId,  // Use role-based locationId
             });
 
             ewasteRecords.push(generatedEwasteRecord);
-            console.log("🚀 ~ issueAsset ~ generated ewasteRecord:", generatedEwasteRecord);
 
-            // 2. If old e-waste is received, create additional "collected" record
             if (ewasteReceived && ewasteQuantity > 0) {
-                // Validate ewaste quantity
                 if (ewasteQuantity > request.quantity) {
                     return res.status(400).json({
                         success: false,
@@ -101,11 +254,11 @@ const issueAsset = async (req, res) => {
                     quantity: ewasteQuantity,
                     totalWeight: Number(request.assetId.unitWeight) * ewasteQuantity,
                     receiveDate: new Date(),
-                    status: 'collected'
+                    status: 'collected',
+                    locationId: locationId,  // Use role-based locationId
                 });
 
                 ewasteRecords.push(collectedEwasteRecord);
-                console.log("🚀 ~ issueAsset ~ collected ewasteRecord:", collectedEwasteRecord);
             }
         }
 
@@ -115,8 +268,8 @@ const issueAsset = async (req, res) => {
             msg: 'Asset issued successfully',
             transactionId: transaction._id,
             ewasteStatus: {
-                generated: request.assetId.isEwaste ? true : false,
-                collected: request.assetId.isEwaste && ewasteReceived && ewasteQuantity > 0 ? true : false,
+                generated: request.assetId.isEwaste,
+                collected: request.assetId.isEwaste && ewasteReceived && ewasteQuantity > 0,
                 recordsCreated: ewasteRecords.length
             }
         });
@@ -130,6 +283,7 @@ const issueAsset = async (req, res) => {
         });
     }
 };
+
 
 // New reject request controller
 const rejectRequest = async (req, res) => {
@@ -180,20 +334,77 @@ const rejectRequest = async (req, res) => {
 };
 
 // Get inventory information for a specific asset
+// const getAssetInventory = async (req, res) => {
+//     try {
+//         const assetId = req.params.id;
+//         console.log("🚀 ~ getAssetInventory ~ req.params:", req.params)
+//         console.log("🚀 ~ getAssetInventory ~ assetId:", assetId)
+
+//         const inventory = await Inventory.findOne({ assetId }).populate('assetId', 'assetName');
+//         console.log("🚀 ~ getAssetInventory ~ inventory:", inventory)
+
+//         if (!inventory) {
+//             return res.status(404).json({
+//                 success: false,
+//                 statusCode: 404,
+//                 msg: 'Inventory not found for this asset'
+//             });
+//         }
+
+//         return res.status(200).json({
+//             success: true,
+//             statusCode: 200,
+//             inventory: {
+//                 totalStock: inventory.totalStock,
+//                 availableStock: inventory.availableStock,
+//                 issuedStock: inventory.issuedStock,
+//                 assetName: inventory.assetId.assetName,
+//                 lastUpdated: inventory.lastUpdated
+//             }
+//         });
+
+//     } catch (err) {
+//         console.log("🚀 ~ getAssetInventory ~ err:", err);
+//         return res.status(500).json({
+//             success: false,
+//             statusCode: 500,
+//             msg: 'Internal server error',
+//         });
+//     }
+// };
 const getAssetInventory = async (req, res) => {
     try {
         const assetId = req.params.id;
-        console.log("🚀 ~ getAssetInventory ~ req.params:", req.params)
-        console.log("🚀 ~ getAssetInventory ~ assetId:", assetId)
 
-        const inventory = await Inventory.findOne({ assetId }).populate('assetId', 'assetName');
-        console.log("🚀 ~ getAssetInventory ~ inventory:", inventory)
+        // Determine location based on user role
+        let locationId;
+        if (req.user.role === 'manager') {
+            locationId = req.user.locationId;
+        } else if (req.user.role === 'admin') {
+            locationId = req.user.assignedLocationId;
+        } else {
+            return res.status(403).json({
+                success: false,
+                statusCode: 403,
+                msg: 'Access denied: location not available for this user role'
+            });
+        }
 
+        if (!locationId) {
+            return res.status(400).json({
+                success: false,
+                statusCode: 400,
+                msg: 'Location not found for this user'
+            });
+        }
+
+        // Fetch inventory for this asset at the user's location
+        const inventory = await Inventory.findOne({ assetId, locationId }).populate('assetId', 'assetName');
         if (!inventory) {
             return res.status(404).json({
                 success: false,
                 statusCode: 404,
-                msg: 'Inventory not found for this asset'
+                msg: 'Inventory not found for this asset at your location'
             });
         }
 
@@ -205,7 +416,8 @@ const getAssetInventory = async (req, res) => {
                 availableStock: inventory.availableStock,
                 issuedStock: inventory.issuedStock,
                 assetName: inventory.assetId.assetName,
-                lastUpdated: inventory.lastUpdated
+                lastUpdated: inventory.lastUpdated,
+                locationId: locationId
             }
         });
 
@@ -218,6 +430,7 @@ const getAssetInventory = async (req, res) => {
         });
     }
 };
+
 
 
 // const issueAsset = async (req, res) => {
@@ -406,61 +619,61 @@ const getAssetInventory = async (req, res) => {
 //     }
 // }
 
-const addAssetInInventory = async (req, res) => {
-    try {
-        const { assetName, categoryName, quantity, minimumThreshold } = req.body;
-        const addedBy = req.user.id; // Assuming the user ID is stored in req.user.id after authentication
+// const addAssetInInventory = async (req, res) => {
+//     try {
+//         const { assetName, categoryName, quantity, minimumThreshold } = req.body;
+//         const addedBy = req.user.id; // Assuming the user ID is stored in req.user.id after authentication
 
-        const category = await AssetCategory.findOne({ categoryName });
-        if (!category) {
-            return res.status(404).json({ msg: 'Asset category not found' });
-        }
+//         const category = await AssetCategory.findOne({ categoryName });
+//         if (!category) {
+//             return res.status(404).json({ msg: 'Asset category not found' });
+//         }
 
-        let asset = await Asset.findOne({ assetName, categoryId: category._id });
-        if (!asset) {
-            // asset = new Asset({
-            //     assetName,
-            //     categoryId: category._id,
-            //     createdBy: addedBy,
-            //     isActive: true,
-            // });
-            // await asset.save();
-            return res.status(404).json({ msg: 'Asset not found in the specified category. Please create the asset first.' });
-        }
+//         let asset = await Asset.findOne({ assetName, categoryId: category._id });
+//         if (!asset) {
+//             // asset = new Asset({
+//             //     assetName,
+//             //     categoryId: category._id,
+//             //     createdBy: addedBy,
+//             //     isActive: true,
+//             // });
+//             // await asset.save();
+//             return res.status(404).json({ msg: 'Asset not found in the specified category. Please create the asset first.' });
+//         }
 
-        let inventory = await Inventory.findOne({ assetId: asset._id });
-        if (inventory) {
-            inventory.availableStock += quantity;
-            inventory.totalStock += quantity;
-            inventory.lastUpdated = new Date();
-            inventory.updatedBy = addedBy;
-            await inventory.save();
-        } else {
-            inventory = new Inventory({
-                assetId: asset._id,
-                availableStock: quantity,
-                issuedStock: 0,
-                totalStock: quantity,
-                minimumThreshold: minimumThreshold || 0,
-                createdBy: addedBy,
-                lastUpdated: new Date(),
-                updatedBy: addedBy,
-            });
-            await inventory.save();
-        }
+//         let inventory = await Inventory.findOne({ assetId: asset._id });
+//         if (inventory) {
+//             inventory.availableStock += quantity;
+//             inventory.totalStock += quantity;
+//             inventory.lastUpdated = new Date();
+//             inventory.updatedBy = addedBy;
+//             await inventory.save();
+//         } else {
+//             inventory = new Inventory({
+//                 assetId: asset._id,
+//                 availableStock: quantity,
+//                 issuedStock: 0,
+//                 totalStock: quantity,
+//                 minimumThreshold: minimumThreshold || 0,
+//                 createdBy: addedBy,
+//                 lastUpdated: new Date(),
+//                 updatedBy: addedBy,
+//             });
+//             await inventory.save();
+//         }
 
-        return res.status(200).json({
-            success: true,
-            statusCode: 200,
-            msg: 'Asset added to inventory successfully',
-            inventory,
-        });
+//         return res.status(200).json({
+//             success: true,
+//             statusCode: 200,
+//             msg: 'Asset added to inventory successfully',
+//             inventory,
+//         });
 
-    } catch (error) {
-        console.error('Error adding asset to inventory:', error);
-        return res.status(500).json({ msg: 'Internal server error' });
-    }
-}
+//     } catch (error) {
+//         console.error('Error adding asset to inventory:', error);
+//         return res.status(500).json({ msg: 'Internal server error' });
+//     }
+// }
 
 const getAllTransactions = async (req, res) => {
     try {
@@ -504,7 +717,7 @@ const getAllTransactions = async (req, res) => {
 export {
     issueAsset,
     // returnAsset,
-    addAssetInInventory,
+    // addAssetInInventory,
     getAllTransactions,
     getAssetInventory,
     rejectRequest,

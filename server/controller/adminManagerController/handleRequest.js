@@ -6,7 +6,54 @@ import User from '../../models/users.js';
 
 const handlePendingRequest = async (req, res) => {
     try {
-        const requests = await Request.find({ status: 'pending' }).populate('assetId requestorId');
+        let query = { status: 'pending' };
+        const requestedLocationId = req.params.locationId || req.query.locationId || req.body.locationId;
+        
+        // Apply location-based filtering based on user role
+        if (req.user.role === 'admin' && req.user.assignedLocationId) {
+            // If a location filter is passed, enforce it matches assigned location
+            if (requestedLocationId && req.user.assignedLocationId?.toString() !== requestedLocationId) {
+                return res.status(403).json({
+                    success: false,
+                    statusCode: 403,
+                    msg: 'Access denied: Not authorized for this location'
+                });
+            }
+            // Admin can only see requests from their assigned location
+            query = {
+                ...query,
+                requestorId: {
+                    $in: await User.find({ locationId: req.user.assignedLocationId }).select('_id')
+                }
+            };
+        } else if (req.user.role === 'manager') {
+            // If a location filter is passed, enforce it matches user's location
+            if (requestedLocationId && req.user.locationId?.toString() !== requestedLocationId) {
+                return res.status(403).json({
+                    success: false,
+                    statusCode: 403,
+                    msg: 'Access denied: Not authorized for this location'
+                });
+            }
+            // Manager can only see requests from their location
+            query = {
+                ...query,
+                requestorId: {
+                    $in: await User.find({ locationId: req.user.locationId }).select('_id')
+                }
+            };
+        } else if (req.user.role === 'superAdmin' && requestedLocationId) {
+            // superAdmin can optionally filter by locationId
+            query = {
+                ...query,
+                requestorId: {
+                    $in: await User.find({ locationId: requestedLocationId }).select('_id')
+                }
+            };
+        }
+        // superAdmin with no filter can see all requests
+
+        const requests = await Request.find(query).populate('assetId requestorId');
         if(requests.length === 0) {
             return res.json({
                 success: true,
@@ -38,6 +85,9 @@ const rejectRequest = async (req, res) => {
     try {
         const requestId = req.params.id;
         const request = await Request.findById(requestId).populate('assetId requestorId');
+        const reason = req.body.rejectionReason || 'No reason provided';
+        console.log("🚀 ~ rejectRequest ~ reason:", reason)
+        
         if (!request) {
             return res.status(404).json({
                 success: false,
@@ -56,6 +106,7 @@ const rejectRequest = async (req, res) => {
         request.status = 'rejected';
         request.reviewedBy = req.user.id;
         request.reviewDate = new Date();
+        request.rejectionReason = reason;
         await request.save();
 
         res.json({
@@ -164,7 +215,59 @@ const directRequest = async (req, res) => {
 
 const getAllRequests = async (req, res) => {
     try{
-        const requests = await Request.find().populate('assetId requestorId categoryId departmentId sectionId reviewedBy').sort({ createdAt: -1 });
+        let query = {};
+        let requestedLocationId = undefined;
+        // Only check req.params.locationId if route is /all-request/location/:locationId
+        if (req.params && typeof req.params.locationId !== 'undefined') {
+            requestedLocationId = req.params.locationId;
+        } else if (req.query && typeof req.query.locationId !== 'undefined') {
+            requestedLocationId = req.query.locationId;
+        } else if (req.body && typeof req.body.locationId !== 'undefined') {
+            requestedLocationId = req.body.locationId;
+        }
+        
+        // Apply location-based filtering based on user role
+        if (req.user.role === 'admin' && req.user.assignedLocationId) {
+            // If a location filter is passed, enforce it matches assigned location
+            if (requestedLocationId && req.user.assignedLocationId?.toString() !== requestedLocationId) {
+                return res.status(403).json({
+                    success: false,
+                    statusCode: 403,
+                    msg: 'Access denied: Not authorized for this location'
+                });
+            }
+            // Admin can only see requests from their assigned location
+            query = {
+                requestorId: {
+                    $in: await User.find({ locationId: req.user.assignedLocationId }).select('_id')
+                }
+            };
+        } else if (req.user.role === 'manager') {
+            // If a location filter is passed, enforce it matches user's location
+            if (requestedLocationId && req.user.locationId?.toString() !== requestedLocationId) {
+                return res.status(403).json({
+                    success: false,
+                    statusCode: 403,
+                    msg: 'Access denied: Not authorized for this location'
+                });
+            }
+            // Manager can only see requests from their location
+            query = {
+                requestorId: {
+                    $in: await User.find({ locationId: req.user.locationId }).select('_id')
+                }
+            };
+        } else if (req.user.role === 'superAdmin' && requestedLocationId) {
+            // superAdmin can optionally filter by locationId
+            query = {
+                requestorId: {
+                    $in: await User.find({ locationId: requestedLocationId }).select('_id')
+                }
+            };
+        }
+        // superAdmin with no filter can see all requests
+
+        const requests = await Request.find(query).populate('assetId requestorId categoryId departmentId sectionId reviewedBy').sort({ createdAt: -1 });
         if(requests.length === 0){
             return res.json({
                 success: true,
