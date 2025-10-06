@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import User from '../../models/users.js';
 import Department from '../../models/department.js';
 import Section from '../../models/section.js';
@@ -10,6 +11,7 @@ dotenv.config();
 const registerHandler =async(req, res)=>{
     try{
         const {name, email, sapId, location, department, section, password} = req.body;
+        console.log("🚀 ~ registerHandler ~ location:", location)
         if(!name || !email || !sapId || !location || !department || !section || !password){
             return res.status(400).json({msg: 'Please provide all required fields'});
         }
@@ -23,9 +25,12 @@ const registerHandler =async(req, res)=>{
             });
         }
         
-        const locationFound = await ProjectLocation.findOne({location});
-        const departmentFound = await Department.findOne({name: department});
-        const sectionFound = await Section.findOne({name: section});
+        const locationFound = await ProjectLocation.findOne({_id: location});
+        console.log("🚀 ~ registerHandler ~ locationFound:", locationFound)
+        const departmentFound = await Department.findOne({_id: department});
+        console.log("🚀 ~ registerHandler ~ departmentFound:", departmentFound)
+        const sectionFound = await Section.findOne({_id: section});
+        console.log("🚀 ~ registerHandler ~ sectionFound:", sectionFound)
         if(!locationFound || !departmentFound || !sectionFound){  
             return res.status(400).json({
                 success: false,
@@ -63,92 +68,103 @@ const registerHandler =async(req, res)=>{
     }
 }
 
-const loginHandler = async(req, res)=>{
-    try{
-        const {sapId, password} = req.body;
-        if(!sapId || !password){
-            return res.status(400).json({msg: 'Please provide both SAP ID and password'});
-        }
-        const user= await User.findOne({sapId}).select('+password'); // Ensure password is included in the query
-        if(!user){  
-            return res.status(404).json({msg: 'User not found'});
+const loginHandler = async (req, res) => {
+    try {
+        const { sapId, password } = req.body;
+        
+        // Input validation
+        if (!sapId || !password) {
+            return res.status(400).json({
+                success: false,
+                msg: 'Please provide both SAP ID and password',
+                statusCode: 400
+            });
         }
 
-        if(user.role === 'admin' && password === process.env.ADMIN_PASSWORD){
-            const token = jwt.sign({
+        // Find user and include password field
+        const user = await User.findOne({ sapId }).select('+password');
+        console.log("🚀 ~ loginHandler ~ user found:", user);
+        
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                msg: 'Invalid credentials',
+                statusCode: 401
+            });
+        }
+
+        let isPasswordValid = false;
+        
+        // Special handling for superAdmin - check against environment variable
+        if (user.role === 'superAdmin') {
+            isPasswordValid = password === process.env.SUPER_ADMIN_PASSWORD;
+        } else {
+            // For all other roles (admin, manager, user) - check against database using bcrypt
+            if (!user.password) {
+                console.error('No password found in database for user:', sapId);
+                return res.status(500).json({
+                    success: false,
+                    msg: 'Internal server error',
+                    statusCode: 500
+                });
+            }
+            isPasswordValid = await bcrypt.compare(password, user.password);
+        }
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                msg: 'Invalid credentials',
+                statusCode: 401
+            });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            {
                 id: user._id,
-                role: 'admin'
+                role: user.role,
+                sapId: user.sapId
             },
             process.env.JWT_SECRET,
-            {expiresIn: '1h'});
-            
-            console.log('Admin login successful');
-            
-            return res.status(200).json({
-                success: true,
-                msg: 'Admin login successful', token,
-                sapId: sapId,
-                name: user.name,
-                statusCode: 200,
-                
-            });
+            { expiresIn: '1h' }
+        );
 
+        // Set session for regular users (optional)
+        if (user.role === 'user') {
+            req.session.userId = user._id;
+            console.log("🚀 ~ loginHandler ~ req.session.userId:", req.session.userId);
         }
-        // else if(user.role === 'manager' && password === process.env.MANAGER_PASSWORD){
-        else if(user.role === 'manager'){
-            const token = jwt.sign({
-                    id: user._id,
-                    role: 'manager'
-                },
-                process.env.JWT_SECRET,
-                {expiresIn: '1h'}
-            );
-            
-            return res.status(200).json({
-                success: true,
-                msg: 'Manager login successful', token,
-                sapId: sapId,
-                name: user.name,
-                statusCode: 200,
-            });
-        }
-        else {
-            user.checkpw(password, async (err, result) => {
-                if (err) return next(err);
-                if (!result) {
-                    return res.status(400).json({
-                        success: false,
-                        statusCode: 400,
-                        msg: 'Invalid Password'
-                    });
-                }
-                req.session.userId = user._id;
-                console.log("🚀 ~ loginHandler ~ req.session.userId:", req.session.userId);
 
-                const token = jwt.sign({
-                    id: user._id,
-                    role: 'user'
-                }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        // Success response
+        const roleMessages = {
+            superAdmin: 'SuperAdmin login successful',
+            admin: 'Admin login successful', 
+            manager: 'Manager login successful',
+            user: 'User login successful'
+        };
 
-                return res.status(200).json({
-                    success: true,
-                    msg: 'User login successful', token,
-                    sapId: sapId,
-                    name: user.name,
-                    statusCode: 200,
-                });
-            });
-        }
-        
-    }catch(err){
+        console.log(`${user.role} login successful for SAP ID: ${sapId}`);
+
+        return res.status(200).json({
+            success: true,
+            msg: roleMessages[user.role] || 'Login successful',
+            token,
+            sapId: user.sapId,
+            name: user.name,
+            role: user.role,
+            statusCode: 200
+        });
+
+    } catch (err) {
         console.error('Login error:', err);
         return res.status(500).json({
-            sucess: false,
-            statusCode: 500,
-            msg: 'Internal server error'
+            success: false, // Fixed typo: was "sucess"
+            msg: 'Internal server error',
+            statusCode: 500
         });
     }
-}
+};
 
 const getUserDetails = async(req, res)=>{
     try{

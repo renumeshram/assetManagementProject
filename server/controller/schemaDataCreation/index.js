@@ -33,7 +33,7 @@ const createSection = async (req, res) => {
             return res.status(404).json({ message: 'Department not found' });
         }
         const newSection = new Section({
-            sectioname,
+            sectionName,
             departmentId: dept._id // Store the department ID
         });
         await newSection.save();
@@ -114,14 +114,8 @@ const createAsset = async(req , res)=>{
         })
         console.log("🚀 ~ createAsset ~ asset successfully created:", asset)
 
-        const inventoryEntry = await Inventory.create({
-            assetId: asset._id,
-            totalStock: 0,
-            availableStock: 0,
-            updatedBy: req.user.id,
-        })
-        console.log("🚀 ~ createAsset ~ asset has made inventoryEntry:", inventoryEntry)
-    
+        // Don't add asset to inventory directly, use createInventory() from inventoryController
+        
         return res.status(201).json({
             success: true,
             statusCode: 201,

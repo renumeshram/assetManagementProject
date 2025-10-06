@@ -1,20 +1,75 @@
 import Inventory from '../../models/inventory.js';
 import InventoryHistory from '../../models/inventoryHistory.js';
 
+// const getInventoryList = async (req, res) => {
+//   try {
+//     let { page = 1, limit = 10 } = req.query;
+//     page = parseInt(page);
+//     limit = parseInt(limit);
+
+//     const skip = (page - 1) * limit;
+
+//     const [inventory, total] = await Promise.all([
+//       Inventory.find()
+//         .populate('assetId', 'assetName')
+//         .skip(skip)
+//         .limit(limit),
+//       Inventory.countDocuments(),
+//     ]);
+
+//     return res.status(200).json({
+//       success: true,
+//       data: inventory,
+//       total,
+//       page,
+//       limit,
+//       msg: 'Inventory fetched successfully.',
+//       statusCode: 200,
+//     })
+//   } catch (err) {
+//     console.log("🚀 ~ getInventoryList ~ err fetching inventory list:", err)
+//     return res.status(500).json({
+//       success: false,
+//       statusCode: 500,
+//       msg: 'Failed to fetch inventory.'
+//     })
+//   }
+// }
+
 const getInventoryList = async (req, res) => {
   try {
     let { page = 1, limit = 10 } = req.query;
     page = parseInt(page);
     limit = parseInt(limit);
-
     const skip = (page - 1) * limit;
 
+    // Only allow admin or superAdmin to fetch inventory
+    if (!['admin', 'superAdmin'].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        statusCode: 403,
+        msg: 'Access denied: You are not authorized to view inventory.'
+      });
+    }
+
+    let query = {};
+
+    // Admin sees only assigned location inventory
+    if (req.user.role === 'admin' && req.user.assignedLocationId) {
+      query.locationId = req.user.assignedLocationId;
+    }
+    // superAdmin can optionally filter by locationId
+    else if (req.user.role === 'superAdmin' && req.query.locationId) {
+      query.locationId = req.query.locationId;
+    }
+
     const [inventory, total] = await Promise.all([
-      Inventory.find()
+      Inventory.find(query)
         .populate('assetId', 'assetName')
+        .populate('locationId', 'name')
         .skip(skip)
         .limit(limit),
-      Inventory.countDocuments(),
+      Inventory.countDocuments(query),
     ]);
 
     return res.status(200).json({
@@ -25,16 +80,18 @@ const getInventoryList = async (req, res) => {
       limit,
       msg: 'Inventory fetched successfully.',
       statusCode: 200,
-    })
+    });
+
   } catch (err) {
-    console.log("🚀 ~ getInventoryList ~ err fetching inventory list:", err)
+    console.error("🚀 ~ getInventoryList ~ err fetching inventory list:", err);
     return res.status(500).json({
       success: false,
       statusCode: 500,
       msg: 'Failed to fetch inventory.'
-    })
+    });
   }
-}
+};
+
 
 const getInventoryById = async (req, res) => {
   try {
@@ -308,12 +365,21 @@ const createInventory = async (req, res) => {
       minimumThreshold
     } = req.body;
 
+     // ✅ Require location from admin’s assignedLocationId
+     const locationId = req.user.assignedLocationId;
+     if(!locationId){
+      return res.status(400).json({
+        success: false,
+        msg: 'Admin has no assigned location'
+      });
+     }
+
     // Check if inventory already exists for this asset
-    const existingInventory = await Inventory.findOne({ assetId: assetId });
+    const existingInventory = await Inventory.findOne({ assetId: assetId, locationId });
     if (existingInventory) {
       return res.status(400).json({
         success: false,
-        msg: 'Inventory already exists for this asset'
+        msg: 'Inventory already exists for this asset at this location'
       });
     }
 
@@ -323,7 +389,8 @@ const createInventory = async (req, res) => {
     const newIssuedStock = newTotalStock - newAvailableStock;
 
     const inventory = new Inventory({
-      assetId: assetId,
+      assetId,
+      locationId, // 🔹 tie inventory to admin’s assigned location
       totalStock: newTotalStock,
       availableStock: newAvailableStock,
       issuedStock: newIssuedStock,
@@ -336,7 +403,8 @@ const createInventory = async (req, res) => {
     // Create initial history record
     await InventoryHistory.create({
       inventoryId: inventory._id,
-      assetId: assetId,
+      assetId,
+      locationId,
       action: 'initial_setup',
       reason: 'Initial inventory setup',
       adjustmentQuantity: newTotalStock,
@@ -356,7 +424,7 @@ const createInventory = async (req, res) => {
     });
 
     const populatedInventory = await Inventory.findById(inventory._id)
-      .populate('assetId', 'assetName assetCode');
+      .populate('assetId', 'assetName assetCode').populate('locationId', 'name');
 
     res.status(201).json({
       success: true,
