@@ -58,6 +58,10 @@ const assetTransactionSchema = new mongoose.Schema({
         type: Date,
         default: null, // Can be null if not returned yet
     },
+    locationId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ProjectLocation'
+    }
     // isEwaste: {
     //     type: Boolean,
     //     default: false, // Indicates if the asset is marked as e-waste

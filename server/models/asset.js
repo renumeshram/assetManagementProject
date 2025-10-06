@@ -33,7 +33,8 @@ const assetSchema = new mongoose.Schema({
     description:{
         type: String,
         default: "", // Default value for description
-    }
+    },
+
 }, {timestamps: true});
 
 export default mongoose.model('Asset', assetSchema);
