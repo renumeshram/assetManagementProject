@@ -246,39 +246,20 @@ export const getContextualErrorMessage = (error, context = 'general') => {
   return contextMessages[context]?.[error] || error;
 };
 
-// 9. Integration example for React components
-/*
-// Usage in React component:
-
-import { 
-  validateChangePasswordForm, 
-  validateSapId, 
-  validatePassword, 
-  getPasswordStrength 
-} from './passwordSchemas';
-
-const handleFormSubmit = (formData) => {
-  const validation = validateChangePasswordForm(formData);
+// Complete forgot password schema with all steps
+export const forgotPasswordSchema = {
+  sapId: sapIdRules,
+  password: passwordRules,
+  confirmPassword: z.string(),
   
-  if (!validation.success) {
-    // Handle validation errors
-    setErrors(validation.errors);
-    return;
-  }
-  
-  // Proceed with API call
-  submitForm(validation.data);
+  // You can also create combined schemas for validation
+  resetPassword: z.object({
+    newPassword: passwordRules,
+    confirmPassword: z.string(),
+  }).refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  }),
 };
 
-const handlePasswordChange = (password) => {
-  const strength = getPasswordStrength(password);
-  setPasswordStrength(strength);
-  
-  const validation = validatePassword(password);
-  if (!validation.valid) {
-    setPasswordError(validation.error);
-  } else {
-    setPasswordError('');
-  }
-};
-*/
+
