@@ -50,7 +50,14 @@ const createAssetCategory = async(req , res)=>{
         const { categoryName } = req.body
         if(!categoryName){
             return res.status(400).json({
-                message: "Category name is required."
+                msg: "Category name is required."
+            })
+        }
+
+        const existingCategory = await AssetCategory.findOne({categoryName});
+        if(existingCategory){
+            return res.status(400).json({
+                msg: 'Category with this name already exists.'
             })
         }
 

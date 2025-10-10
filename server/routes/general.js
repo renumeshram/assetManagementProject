@@ -1,7 +1,7 @@
 import express from 'express';
 import { getAllAssets } from '../controller/assetController/index.js';
 // import { addAssetInInventory } from '../controller/adminManagerController/assetHandler.js';
-import { createAsset, createProjectLocation } from '../controller/schemaDataCreation/index.js';
+import { createAsset, createAssetCategory, createProjectLocation } from '../controller/schemaDataCreation/index.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { changeRole, getAllUsers } from '../controller/adminManagerController/userHandler.js';
 import { getUserDetails } from '../controller/userController/userRegLogin.js';
@@ -18,6 +18,7 @@ generalRouter.post('/create-location', createProjectLocation)
 generalRouter.get('/locations', authMiddleware(['user']), getAllLocations);
 generalRouter.get('/departments-list', authMiddleware(['user']), getDepartmentsList);
 generalRouter.get('/sections-list', authMiddleware(['user']), getSectionsList);
+generalRouter.post('/assets-category', authMiddleware(['superAdmin','admin']), createAssetCategory);
 
 
 export default generalRouter;

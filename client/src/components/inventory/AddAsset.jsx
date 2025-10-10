@@ -16,16 +16,23 @@ const AddAsset = () => {
 
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ fetch categories
-  useEffect(() => {
+  // Fetch categories
+  const fetchCategories = () => {
     api
-      .get("/general/assets") // 👈 adjust to your backend route for fetching categories
+      .get("/general/assets")
       .then((res) => {
         setCategories(res.data);
       })
       .catch((err) => console.error("Error fetching categories:", err));
+  };
+
+  useEffect(() => {
+    fetchCategories();
   }, []);
 
   const handleChange = (e) => {
@@ -34,6 +41,33 @@ const AddAsset = () => {
       ...form,
       [name]: type === "checkbox" ? checked : value,
     });
+  };
+
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+    if (!newCategory.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    try {
+      setAddingCategory(true);
+      const res = await api.post("/general/assets-category", {
+        categoryName: newCategory.trim(),
+      });
+
+      if (res.data.success) {
+        toast.success(res.data.msg || "Category added successfully!");
+        setNewCategory("");
+        setShowAddCategory(false);
+        fetchCategories(); // Refresh categories
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Error adding category");
+    } finally {
+      setAddingCategory(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -54,7 +88,7 @@ const AddAsset = () => {
 
       if (res.data.success) {
         toast.success(res.data.msg || "Asset added successfully!");
-        navigate("/assets"); // redirect to asset list page
+        navigate("/assets");
       }
     } catch (err) {
       console.error(err);
@@ -67,8 +101,42 @@ const AddAsset = () => {
   return (
     <div className="bg-gray-900 text-white rounded-xl shadow-lg border border-gray-700 p-6 max-w-xl mx-auto">
       <h3 className="text-xl font-semibold mb-6">Add New Asset</h3>
+
+      {/* Add Category Section */}
+      <div className="mb-6 p-4 bg-gray-800 border border-gray-700 rounded-lg">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-gray-300">Manage Categories</h4>
+          <button
+            type="button"
+            onClick={() => setShowAddCategory(!showAddCategory)}
+            className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded-md text-white transition-colors cursor-pointer"
+          >
+            {showAddCategory ? "Cancel" : "+ Add Category"}
+          </button>
+        </div>
+
+        {showAddCategory && (
+          <form onSubmit={handleAddCategory} className="flex gap-2">
+            <input
+              type="text"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="Enter category name"
+              className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={addingCategory}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-md text-white text-sm font-medium transition-colors cursor-pointer"
+            >
+              {addingCategory ? "Adding..." : "Add"}
+            </button>
+          </form>
+        )}
+      </div>
+
+      {/* Asset Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        
         {/* Category Dropdown */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -78,7 +146,7 @@ const AddAsset = () => {
             name="categoryName"
             value={form.categoryName}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md"
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >
             <option value="">Select Category</option>
@@ -98,7 +166,7 @@ const AddAsset = () => {
             name="assetName"
             value={form.assetName}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md"
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
@@ -112,7 +180,7 @@ const AddAsset = () => {
               name="make"
               value={form.make}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -123,7 +191,7 @@ const AddAsset = () => {
               name="model"
               value={form.model}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
@@ -137,7 +205,7 @@ const AddAsset = () => {
             name="unitWeight"
             value={form.unitWeight}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md"
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
@@ -149,7 +217,7 @@ const AddAsset = () => {
             name="isEwaste"
             checked={form.isEwaste}
             onChange={handleChange}
-            className="h-4 w-4"
+            className="h-4 w-4 rounded bg-gray-800 border-gray-600"
           />
           <label className="text-sm">Mark as E-Waste</label>
         </div>
@@ -157,14 +225,13 @@ const AddAsset = () => {
         {/* Description */}
         <div>
           <label className="block text-sm mb-1">Description</label>
-          <input
-            type="textarea"
+          <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
             maxLength={200}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md"
-            
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
 
@@ -173,14 +240,14 @@ const AddAsset = () => {
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-md text-white font-medium"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-md text-white font-medium transition-colors cursor-pointer"
           >
             {loading ? "Saving..." : "Save"}
           </button>
           <button
             type="button"
             onClick={() => navigate("/assets")}
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-white font-medium"
+            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-md text-white font-medium transition-colors"
           >
             Cancel
           </button>
