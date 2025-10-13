@@ -62,7 +62,7 @@ const Dashboard = () => {
           formattedStats = [
             { title: "My Requests", value: statsData.myRequests, icon: "FileText", color: "blue" },
             { title: "Pending", value: statsData.pending, icon: "Clock", color: "yellow" },
-            { title: "Approved", value: statsData.approved, icon: "CheckCircle", color: "green" },
+            // { title: "Approved", value: statsData.approved, icon: "CheckCircle", color: "green" },
             { title: "Issued", value: statsData.issued, icon: "Package", color: "purple" },
           ];
         }

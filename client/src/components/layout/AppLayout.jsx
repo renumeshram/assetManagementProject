@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import Sidebar from "../common/Sidebar";
 import Header from "../common/Header";
+import Footer from "../common/Footer";
 import Dashboard from "../dashboard/Dashboard";
 import RequestForm from "../requests/RequestForm";
 import DirectRequestForm from "../requests/DirectRequestForm";
@@ -76,6 +77,7 @@ const AppLayout = () => {
             <Route path="/location-management" element={<LocationManagement/>}/>
           </Routes>
         </main>
+        <Footer/>
       </div>
 
       {/* Toast Notifications */}

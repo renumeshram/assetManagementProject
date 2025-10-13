@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import api from "../../utils/api";
+import Header from "../common/Header";
+import Footer from "../common/Footer";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -53,7 +55,6 @@ const RegisterForm = () => {
     setLoading((prev) => ({ ...prev, locations: true }));
     try {
       const res = await api.get(`${API_URL}/auth/locations`);
-      // console.log("🚀 ~ fetchLocations ~ res:", res.data);
       
       if (res.data.success && Array.isArray(res.data.locations)) {
         setLocations(res.data.locations);
@@ -154,201 +155,207 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white px-4">
-      <div className="w-full max-w-md bg-gray-850/90 backdrop-blur-lg rounded-2xl shadow-2xl shadow-black/40 p-8 mt-20">
-        <h2 className="text-3xl font-bold mb-6 text-center">
-          Create Your Account
-        </h2>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-white">
+      <Header />
+      
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md bg-gray-850/90 backdrop-blur-lg rounded-2xl shadow-2xl shadow-black/40 p-8">
+          <h2 className="text-3xl font-bold mb-6 text-center">
+            Create Your Account
+          </h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Full Name */}
-          <div>
-            <input
-              type="text"
-              placeholder="Full Name"
-              {...register("name")}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                         focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                         outline-none transition-all"
-            />
-            {errors.name && (
-              <p className="text-sm text-red-400 mt-1">{errors.name.message}</p>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Full Name */}
+            <div>
+              <input
+                type="text"
+                placeholder="Full Name"
+                {...register("name")}
+                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                           outline-none transition-all"
+              />
+              {errors.name && (
+                <p className="text-sm text-red-400 mt-1">{errors.name.message}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <input
+                type="email"
+                placeholder="Email"
+                {...register("email")}
+                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                           outline-none transition-all"
+              />
+              {errors.email && (
+                <p className="text-sm text-red-400 mt-1">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* SAP ID */}
+            <div>
+              <input
+                type="number"
+                placeholder="SAP ID"
+                {...register("sapId", { valueAsNumber: true })}
+                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                           outline-none transition-all"
+              />
+              {errors.sapId && (
+                <p className="text-sm text-red-400 mt-1">
+                  {errors.sapId.message}
+                </p>
+              )}
+            </div>
+
+            {/* Location Dropdown */}
+            <div>
+              <select
+                {...register("location")}
+                disabled={loading.locations}
+                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                           outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {loading.locations ? "Loading locations..." : "Select Location"}
+                </option>
+                {locations.map((loc) => (
+                  <option key={loc._id} value={loc._id}>
+                    {loc.location}
+                  </option>
+                ))}
+              </select>
+              {errors.location && (
+                <p className="text-sm text-red-400 mt-1">
+                  {errors.location.message}
+                </p>
+              )}
+            </div>
+
+            {/* Department Dropdown (only visible if location chosen) */}
+            {selectedLocation && (
+              <div>
+                <select
+                  {...register("department")}
+                  disabled={loading.departments}
+                  className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                             focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                             outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {loading.departments
+                      ? "Loading departments..."
+                      : "Select Department"}
+                  </option>
+                  {departments.map((dept) => (
+                    <option key={dept._id} value={dept._id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.department && (
+                  <p className="text-sm text-red-400 mt-1">
+                    {errors.department.message}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
 
-          {/* Email */}
-          <div>
-            <input
-              type="email"
-              placeholder="Email"
-              {...register("email")}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                         focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                         outline-none transition-all"
-            />
-            {errors.email && (
-              <p className="text-sm text-red-400 mt-1">
-                {errors.email.message}
-              </p>
+            {/* Section Dropdown (only visible if department chosen) */}
+            {selectedDepartment && (
+              <div>
+                <select
+                  {...register("section")}
+                  disabled={loading.sections}
+                  className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                             focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                             outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {loading.sections ? "Loading sections..." : "Select Section"}
+                  </option>
+                  {sections.map((sec) => (
+                    <option key={sec._id} value={sec._id}>
+                      {sec.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.section && (
+                  <p className="text-sm text-red-400 mt-1">
+                    {errors.section.message}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
 
-          {/* SAP ID */}
-          <div>
-            <input
-              type="number"
-              placeholder="SAP ID"
-              {...register("sapId", { valueAsNumber: true })}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                         focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                         outline-none transition-all"
-            />
-            {errors.sapId && (
-              <p className="text-sm text-red-400 mt-1">
-                {errors.sapId.message}
-              </p>
-            )}
-          </div>
+            {/* Password */}
+            <div>
+              <input
+                type="password"
+                placeholder="Password"
+                {...register("password")}
+                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                           outline-none transition-all"
+              />
+              {errors.password && (
+                <p className="text-sm text-red-400 mt-1">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
 
-          {/* Location Dropdown */}
-          <div>
-            <select
-              {...register("location")}
-              disabled={loading.locations}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                         focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                         outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            {/* Confirm Password */}
+            <div>
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                {...register("confirmPassword")}
+                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
+                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
+                           outline-none transition-all"
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-400 mt-1">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
+            {/* Login Redirect */}
+            <div className="flex items-center justify-center">
+              <label className="flex items-center text-sm text-gray-400">
+                Already Registered?
+                
+                  <a href="/login"
+                  className="ml-2 text-emerald-400 hover:underline"
+                >
+                  Login here
+                </a>
+              </label>
+            </div>
+
+            {/* Submit button */}
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 
+                         transition-all font-semibold shadow-lg shadow-emerald-500/30 
+                         focus:ring-2 focus:ring-emerald-300/50 cursor-pointer"
             >
-              <option value="">
-                {loading.locations ? "Loading locations..." : "Select Location"}
-              </option>
-              {locations.map((loc) => (
-                <option key={loc._id} value={loc._id}>
-                  {loc.location}
-                </option>
-              ))}
-            </select>
-            {errors.location && (
-              <p className="text-sm text-red-400 mt-1">
-                {errors.location.message}
-              </p>
-            )}
-          </div>
-
-          {/* Department Dropdown (only visible if location chosen) */}
-          {selectedLocation && (
-            <div>
-              <select
-                {...register("department")}
-                disabled={loading.departments}
-                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                           outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">
-                  {loading.departments
-                    ? "Loading departments..."
-                    : "Select Department"}
-                </option>
-                {departments.map((dept) => (
-                  <option key={dept._id} value={dept._id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-              {errors.department && (
-                <p className="text-sm text-red-400 mt-1">
-                  {errors.department.message}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Section Dropdown (only visible if department chosen) */}
-          {selectedDepartment && (
-            <div>
-              <select
-                {...register("section")}
-                disabled={loading.sections}
-                className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                           focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                           outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">
-                  {loading.sections ? "Loading sections..." : "Select Section"}
-                </option>
-                {sections.map((sec) => (
-                  <option key={sec._id} value={sec._id}>
-                    {sec.name}
-                  </option>
-                ))}
-              </select>
-              {errors.section && (
-                <p className="text-sm text-red-400 mt-1">
-                  {errors.section.message}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Password */}
-          <div>
-            <input
-              type="password"
-              placeholder="Password"
-              {...register("password")}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                         focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                         outline-none transition-all"
-            />
-            {errors.password && (
-              <p className="text-sm text-red-400 mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              {...register("confirmPassword")}
-              className="w-full px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 
-                         focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/50 
-                         outline-none transition-all"
-            />
-            {errors.confirmPassword && (
-              <p className="text-sm text-red-400 mt-1">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
-
-          {/* Login Redirect */}
-          <div className="flex items-center justify-center">
-            <label className="flex items-center text-sm text-gray-400">
-              Already Registered?
-              
-                <a href="/login"
-                className="ml-2 text-emerald-400 hover:underline"
-              >
-                Login here
-              </a>
-            </label>
-          </div>
-
-          {/* Submit button */}
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 
-                       transition-all font-semibold shadow-lg shadow-emerald-500/30 
-                       focus:ring-2 focus:ring-emerald-300/50 cursor-pointer"
-          >
-            Register
-          </button>
-        </form>
+              Register
+            </button>
+          </form>
+        </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };
