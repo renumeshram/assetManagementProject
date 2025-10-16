@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 
 const ensureSuperAdmin = async () => {
   try {
-    const exists = await User.findOne({ role: "superAdmin" });
+    const exists = await User.findOne({ role: { $in: ['superAdmin'] } });
     if (exists) {
       console.log("✅ SuperAdmin already exists:", exists.sapId);
       return;

@@ -11,7 +11,7 @@ authRouter.post('/login', loginHandler);
 authRouter.post('/register', registerHandler);
 
 authRouter.post('/change-password', authMiddleware(['superAdmin','admin', 'manager', 'user']), changePassword)
-authRouter.post('/reset-password', resetPassword); //single reset
+authRouter.post('/reset-password', authMiddleware(['admin']), resetPassword); //single reset
 authRouter.post('/reset-all-passwords', authMiddleware(['superAdmin','admin']), resetAllPasswords); //bulk reset
 authRouter.post('/reset-admin-password', authMiddleware(['superAdmin']), adminPasswordReset); //admin reset by superAdmin
 authRouter.get('/locations', getAllLocations)

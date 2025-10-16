@@ -21,7 +21,7 @@ import  ewasteRouter  from './routes/ewaste.js';
 import locationRouter from './routes/location.js';
 import ensureSuperAdmin from './utility/ensureSuperAdmin.js';
 import dashboardRouter from './routes/dashboard.js';
-import api from '../client/src/utils/api.js';
+// import api from '../client/src/utils/api.js';
 import forgotPwRouter from './routes/forgotPw.js';
 
 
@@ -65,7 +65,8 @@ app.use('/api/locations', locationRouter)
 app.use('/api/dashboard', dashboardRouter)
 app.use('/api/forgot-password', forgotPwRouter)
 
-mongoose.connect(process.env.MONGO_URL).then(async() =>{
+console.log("🚀 ~ process.env.MONGO_URL:", process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI).then(async() =>{
     console.log("Connected to MongoDB");
     await ensureSuperAdmin();
     app.listen(PORT, () => 
