@@ -3,6 +3,7 @@ import { DataGrid } from "@mui/x-data-grid";
 import { Edit } from "lucide-react";
 import api from "../../utils/api";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../../hooks/useAuth.js";
 import {
   Dialog,
   DialogTitle,
@@ -52,6 +53,7 @@ const darkTheme = createTheme({
 });
 
 const InventoryList = () => {
+  const { user } = useAuth();
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rowCount, setRowCount] = useState(0);
@@ -250,6 +252,7 @@ const InventoryList = () => {
     if (!isFormValid()) return;
 
     try {
+      // const locationId = await api.get(`${API_URL}/general/${user.sapId}`)
       await api.put(`${API_URL}/inventory/update-inventory/${currentRow.id}`, {
         // only send threshold when user provided something
         ...(editForm.minimumThreshold !== undefined &&

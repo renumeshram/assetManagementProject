@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { CssBaseline, Dialog, DialogTitle, DialogContent, DialogActions, Button, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
+import {
+  CssBaseline,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { useAuth } from "../../hooks/useAuth"; // use your hook
@@ -52,6 +63,7 @@ const UsersList = () => {
           department: u.departmentId?.name || "N/A",
           section: u.sectionId?.name || "N/A",
           role: u.role || "N/A",
+          location: u.locationId?.location || u.locationId?.name || "N/A",
         }));
         setUsers(mapped);
         setRowCount(res.data.total || 0);
@@ -97,15 +109,21 @@ const UsersList = () => {
 
       if (res.data.success) {
         setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, role: payload.newRole } : u))
+          prev.map((u) =>
+            u.id === userId ? { ...u, role: payload.newRole } : u
+          )
         );
         toast.success("User role updated successfully", { id: loadingToast });
       } else {
-        toast.error(res.data.msg || "Failed to update user role", { id: loadingToast });
+        toast.error(res.data.msg || "Failed to update user role", {
+          id: loadingToast,
+        });
       }
     } catch (err) {
       console.error("Error updating role:", err);
-      toast.error("Failed to update user role", { id: loadingToast || undefined });
+      toast.error("Failed to update user role", {
+        id: loadingToast || undefined,
+      });
     }
   };
 
@@ -129,27 +147,34 @@ const UsersList = () => {
       headerName: "S.No",
       width: 80,
       sortable: false,
-      renderCell: (params) => page * pageSize + (params.api.getRowIndexRelativeToVisibleRows(params.id) + 1),
+      renderCell: (params) =>
+        page * pageSize +
+        (params.api.getRowIndexRelativeToVisibleRows(params.id) + 1),
     },
     { field: "name", headerName: "Name", width: 150 },
     { field: "email", headerName: "Email", width: 200 },
     { field: "sapId", headerName: "SAP ID", width: 100 },
     { field: "department", headerName: "Department", width: 150 },
     { field: "section", headerName: "Section", width: 120 },
+    { field: "location", headerName: "Location", width: 150 },
     {
       field: "role",
       headerName: "Role",
       width: 120,
       renderCell: (params) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          params.value === "superAdmin"
-            ? "bg-purple-900 text-purple-200"
-            : params.value === "admin"
-            ? "bg-red-900 text-red-200"
-            : params.value === "manager"
-            ? "bg-blue-900 text-blue-200"
-            : "bg-green-900 text-green-200"
-        }`}>{params.value.toUpperCase()}</span>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            params.value === "superAdmin"
+              ? "bg-purple-900 text-purple-200"
+              : params.value === "admin"
+              ? "bg-red-900 text-red-200"
+              : params.value === "manager"
+              ? "bg-blue-900 text-blue-200"
+              : "bg-green-900 text-green-200"
+          }`}
+        >
+          {params.value.toUpperCase()}
+        </span>
       ),
     },
     {
@@ -166,13 +191,17 @@ const UsersList = () => {
           <option value="user">User</option>
           <option value="manager">Manager</option>
           <option value="admin">Admin</option>
-          <option value="superAdmin">Super Admin</option>
+          {user.role === "superAdmin" && (
+            <option value="superAdmin">Super Admin</option>
+          )}
         </select>
       ),
     },
   ];
 
-  const filteredUsers = users.filter((u) => roleFilter === "all" || u.role === roleFilter);
+  const filteredUsers = users.filter(
+    (u) => roleFilter === "all" || u.role === roleFilter
+  );
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -180,7 +209,9 @@ const UsersList = () => {
       <div className="p-6 min-h-screen bg-gray-900">
         <div className="bg-gray-800 rounded-xl shadow-sm border border-gray-700">
           <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-100">Users Management</h3>
+            <h3 className="text-lg font-semibold text-gray-100">
+              Users Management
+            </h3>
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -215,7 +246,10 @@ const UsersList = () => {
       </div>
 
       {/* Modal for assigning location to admin */}
-      <Dialog open={openLocationModal} onClose={() => setOpenLocationModal(false)}>
+      <Dialog
+        open={openLocationModal}
+        onClose={() => setOpenLocationModal(false)}
+      >
         <DialogTitle>Select Location for New Admin</DialogTitle>
         <DialogContent>
           <FormControl fullWidth>
@@ -225,14 +259,22 @@ const UsersList = () => {
               onChange={(e) => setSelectedLocation(e.target.value)}
             >
               {locations.map((loc) => (
-                <MenuItem key={loc._id} value={loc._id}>{loc.location}</MenuItem>
+                <MenuItem key={loc._id} value={loc._id}>
+                  {loc.location}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenLocationModal(false)}>Cancel</Button>
-          <Button onClick={handleConfirmLocation} variant="contained" color="primary">Confirm</Button>
+          <Button
+            onClick={handleConfirmLocation}
+            variant="contained"
+            color="primary"
+          >
+            Confirm
+          </Button>
         </DialogActions>
       </Dialog>
     </ThemeProvider>

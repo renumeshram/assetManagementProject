@@ -56,7 +56,7 @@ const Dashboard = () => {
             { title: "All Requests", value: statsData.allRequests, icon: "FileText", color: "blue" },
             { title: "Pending Review", value: statsData.pendingReview, icon: "Clock", color: "yellow" },
             { title: "Assets Issued", value: statsData.assetsIssued, icon: "Package", color: "green" },
-            { title: "Returns Due", value: statsData.returnsDue, icon: "FileText", color: "red" },
+            // { title: "Returns Due", value: statsData.returnsDue, icon: "FileText", color: "red" },
           ];
         } else {
           formattedStats = [
