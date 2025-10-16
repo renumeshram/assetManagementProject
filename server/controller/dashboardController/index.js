@@ -14,12 +14,16 @@ export const getRecentRequests = async (req, res) => {
 
     if (role === "superAdmin") {
       // no location filter (all requests)
-    } else if (role === "admin") {
-      // filter by assignedLocationId
-      query.locationId = req.user.assignedLocationId;
-    } else if (role === "manager") {
-      // filter by manager's locationId
-      query.locationId = req.user.locationId;
+    } else if (role === "admin" || role === "manager") {
+      // Get the appropriate locationId based on role
+      const locationId = role === "admin" ? req.user.assignedLocationId : req.user.locationId;
+      
+      // Find departments under this location
+      const departments = await Department.find({ locationId }).select("_id");
+      const deptIds = departments.map(d => d._id);
+      
+      // Filter requests by these department IDs
+      query.departmentId = { $in: deptIds };
     } else {
       // user → only own requests
       query.requestorId = req.user._id;
@@ -31,6 +35,7 @@ export const getRecentRequests = async (req, res) => {
       .populate("assetId", "assetName")
       .populate("departmentId", "name locationId")
       .lean();
+    console.log("🚀 ~ getRecentRequests ~ requests:", requests)
 
     return res.status(200).json({
       success: true,
@@ -88,7 +93,7 @@ const dashboardStats = async (req, res) => {
 
       const [totalUsers, totalAssets, totalRequests, totalLowStockItems] =
         await Promise.all([
-          User.countDocuments({ assignedLocationId: locationId }),
+          User.countDocuments({ locationId }),
           Assets.countDocuments({ isActive: true }), // assets not tied to location
           Request.countDocuments({ status: "pending", departmentId: { $in: deptIds } }),
           Inventory.countDocuments({

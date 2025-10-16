@@ -23,8 +23,14 @@ const raiseRequestHandler = async (req , res)=>{
 
 
         const [assetDetails, sectionDetails] = await Promise.all([
-            Asset.findOne({assetName: asset}, {categoryId: categoryDetails._id}),
-            Section.findOne({name: section}, {departmentId: departmentDetails._id}),
+            Asset.findOne({
+                assetName: asset,
+                categoryId: categoryDetails._id
+            }),
+            Section.findOne({
+                name: section,
+                departmentId: departmentDetails._id
+            }),
         ]);
 
         if(!assetDetails || !sectionDetails) {

@@ -226,6 +226,7 @@ const updateInventory = async (req, res) => {
         availableStock: newAvailableStock,
         issuedStock: newIssuedStock,
         minimumThreshold: newMinThreshold,
+        locationId: req.user.assignedLocationId,
         lastUpdated: new Date(),
         updatedBy: req.user ? req.user.id : null,
       },
@@ -258,6 +259,7 @@ const updateInventory = async (req, res) => {
       inventoryId,
       assetId: currentInventory.assetId,
       action: reason,
+      locationId: req.user.assignedLocationId,
       reason: getReasonDescription(reason),
       adjustmentQuantity: qty,
       description: description || "",
@@ -325,16 +327,38 @@ const getInventoryHistory = async (req, res) => {
 // Get low stock alerts
 const getLowStockAlerts = async (req, res) => {
   try {
-    const lowStockItems = await Inventory.find({
+    // Only allow admin or superAdmin to fetch low stock alerts
+    if (!['admin', 'superAdmin'].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        statusCode: 403,
+        msg: 'Access denied: You are not authorized to view low stock alerts.'
+      });
+    }
+
+    let query = {
       $expr: { $lte: ['$availableStock', '$minimumThreshold'] }
-    })
+    };
+
+    // Admin sees only assigned location inventory
+    if (req.user.role === 'admin' && req.user.assignedLocationId) {
+      query.locationId = req.user.assignedLocationId;
+    }
+    // superAdmin can optionally filter by locationId
+    else if (req.user.role === 'superAdmin' && req.query.locationId) {
+      query.locationId = req.query.locationId;
+    }
+
+    const lowStockItems = await Inventory.find(query)
       .populate('assetId', 'assetName assetCode')
+      .populate('locationId', 'name')  // Add location info
       .sort({ availableStock: 1 });
 
     const formattedData = lowStockItems.map(item => ({
       _id: item._id,
       assetName: item.assetId.assetName,
       assetCode: item.assetId.assetCode,
+      location: item.locationId?.name || 'N/A',
       availableStock: item.availableStock,
       minimumThreshold: item.minimumThreshold,
       deficit: item.minimumThreshold - item.availableStock
